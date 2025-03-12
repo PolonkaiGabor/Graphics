@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build with Makefile",
+            "type": "shell",
+            "command": "make",  // A Makefile parancs
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "Runs make command to build the project"
+        }
+    ]
+}
