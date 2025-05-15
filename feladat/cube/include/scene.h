@@ -6,15 +6,26 @@
 
 #include "model.h"
 
+typedef struct Grid
+{
+    int selected_row;
+    int selected_col;
+    int max_row;
+    int max_col;
+    int** cells;  // 2D dinamikus tömb
+} Grid;
+
 typedef struct Scene
 {
-    //Model cube;
     Model objects[1024];
     int object_count;
     Material material;
     GLuint texture_ids[1024];
     GLuint plane_texture;
+    Grid grid;
+
 } Scene;
+
 
 typedef struct ObjectTemplate{
     int id;

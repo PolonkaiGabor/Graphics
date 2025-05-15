@@ -13,5 +13,7 @@ void print_model_info(const Model* model);
  */
 void print_bounding_box(const Model* model);
 
+void draw_bounding_box(const Model* model);
+
 #endif /* OBJ_INFO_H */
 

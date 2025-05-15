@@ -145,6 +145,27 @@ void handle_app_events(App* app)
             case SDL_SCANCODE_TAB:
                 setElementPosition(&(app->scene.objects[1]), 0.0,0.0,1.0); // mukodik
                 break;
+
+            case SDL_SCANCODE_DOWN:
+                    if (app->scene.grid.selected_row > 0)
+                        app->scene.grid.selected_row--;
+                    break;
+            case SDL_SCANCODE_UP:
+                    if (app->scene.grid.selected_row < app->scene.grid.max_row - 1)
+                        app->scene.grid.selected_row++;
+                    break;
+            case SDL_SCANCODE_LEFT:
+                    if (app->scene.grid.selected_col > 0)
+                        app->scene.grid.selected_col--;
+                    break;
+            case SDL_SCANCODE_RIGHT:
+                    if (app->scene.grid.selected_col < app->scene.grid.max_col - 1) //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
+                        app->scene.grid.selected_col++;
+                    break;
+            case SDL_SCANCODE_RETURN:
+                    app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col] = 1;
+                    printf("ROW: %d, COL: %d\n",app->scene.grid.selected_row,app->scene.grid.selected_col);
+                    break;
             default:
                 break;
             }
@@ -236,6 +257,7 @@ void update_app(App* app)
     
     update_camera(&(app->camera), elapsed_time);
  //   update_character(&app->player, elapsed_time, app);
+
     update_scene(&(app->scene));
 
     frame_time = SDL_GetTicks() - frame_start;

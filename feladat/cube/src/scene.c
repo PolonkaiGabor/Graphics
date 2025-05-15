@@ -1,8 +1,12 @@
 #include "scene.h"
 #include <stdio.h>
+#include <string.h>
 
 #include "load.c"
 #include "draw.c"
+#include "info.h"
+
+#include <SDL2/SDL.h>
 
 const ObjectTemplate object_templates[] = {
     {0, "assets/models/cube.obj", "assets/textures/cube.png"},
@@ -59,75 +63,160 @@ bool setElementPosition(Model* element, float x, float y, float z) {
 #define GRID_SIZE 10   // Alapértelmezett oszlopok és sorok száma
 
 // A háló kirajzolásáért felelős függvény
-void draw_grid(int rows, int cols,int selected_row, int selected_col)
+void draw_grid(const Scene* scene)
 {
     glDisable(GL_LIGHTING);
      glDisable(GL_TEXTURE_2D);  // Textúra letiltása
-    glColor3f(1.0, 1.0, 1.0);  // Fehér szín
+    glColor4f(1.0, 1.0, 1.0, 0.75f);// Fehér szín átlátszó
     glLineWidth(2.0);  // Vonal vastagságának beállítása (pl. 2.0)
+
+    //Élsimítás 
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     glBegin(GL_LINES);
 
     // Sorok kirajzolása
-    for (int i = -rows / 2; i <= rows / 2; i++) {
-        glVertex3f(-GRID_STEP * cols / 2+GRID_STEP/2, GRID_STEP * i+GRID_STEP/2, 0.01);
-        glVertex3f(GRID_STEP * cols / 2+GRID_STEP/2, GRID_STEP * i+GRID_STEP/2, 0.01);
+    for (int i = 0; i <= scene->grid.max_row; i++) {
+        //float y = (i - scene->grid.max_row / 2) * GRID_STEP + GRID_STEP / 2;
+        //float x_start = -GRID_STEP * scene->grid.max_col / 2 + GRID_STEP / 2;
+        //float x_end = GRID_STEP * scene->grid.max_col / 2 + GRID_STEP / 2;
+
+        float y = i * GRID_STEP + GRID_STEP / 2;
+        float x_start = GRID_STEP / 2;
+        float x_end = GRID_STEP * scene->grid.max_col + GRID_STEP / 2;
+
+        glVertex3f(x_start, y, 0.01f);
+        glVertex3f(x_end, y, 0.01f);
     }
 
     // Oszlopok kirajzolása
-    for (int i = -cols / 2; i <= cols / 2; i++) {
-        glVertex3f(GRID_STEP * i+GRID_STEP/2, -GRID_STEP * rows / 2+GRID_STEP/2, 0.01);
-        glVertex3f(GRID_STEP * i+GRID_STEP/2, GRID_STEP * rows / 2+GRID_STEP/2, 0.01);
+    for (int i = 0; i <= scene->grid.max_col; i++) {
+        //float x = (i - scene->grid.max_col / 2) * GRID_STEP + GRID_STEP / 2;
+        //float y_start = -GRID_STEP * scene->grid.max_row / 2 + GRID_STEP / 2;
+       // float y_end = GRID_STEP * scene->grid.max_row / 2 + GRID_STEP / 2;
+
+        float x = i * GRID_STEP + GRID_STEP / 2;
+        float y_start = GRID_STEP / 2;
+        float y_end = scene->grid.max_col * GRID_STEP + GRID_STEP / 2;
+
+        glVertex3f(x, y_start, 0.01f);
+        glVertex3f(x, y_end, 0.01f);
     }
 
     glEnd();
-        glColor3f(0.0, 0.0, 1.0);  // Kék szín
-        glLineWidth(3.0);
+
+    glColor3f(0.0, 0.0, 1.0);  // Kék szín
+    glLineWidth(3.0);
+
+   /* float x = (scene->grid.selected_col - scene->grid.max_col / 2) * GRID_STEP;
+    float y = (scene->grid.selected_row - scene->grid.max_row / 2) * GRID_STEP;
+    glBegin(GL_LINES);  // Négyzetet rajzolunk
+        // Bal alsó pont -> Jobb alsó pont
+        glVertex3f(x - GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
+        glVertex3f(x + GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
+
+        // Jobb alsó pont -> Jobb felső pont
+        glVertex3f(x + GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
+        glVertex3f(x + GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
+
+        // Jobb felső pont -> Bal felső pont
+        glVertex3f(x + GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
+        glVertex3f(x - GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
+
+        // Bal felső pont -> Bal alsó pont
+        glVertex3f(x - GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
+        glVertex3f(x - GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
+    glEnd(); */
+
+    float x = (scene->grid.selected_col) * GRID_STEP + GRID_STEP / 2; // Bal alsó sarok x koordinátája
+    float y = (scene->grid.selected_row) * GRID_STEP + GRID_STEP / 2; // Bal alsó sarok y koordinátája
 
     glBegin(GL_LINES);  // Négyzetet rajzolunk
         // Bal alsó pont -> Jobb alsó pont
-        glVertex3f(GRID_STEP * selected_col - GRID_STEP / 2, GRID_STEP * selected_row - GRID_STEP / 2, 0.011);
-        glVertex3f(GRID_STEP * selected_col + GRID_STEP / 2, GRID_STEP * selected_row - GRID_STEP / 2, 0.011);
+        glVertex3f(x, y, 0.011f);
+        glVertex3f(x + GRID_STEP, y, 0.011f);
 
         // Jobb alsó pont -> Jobb felső pont
-        glVertex3f(GRID_STEP * selected_col + GRID_STEP / 2, GRID_STEP * selected_row - GRID_STEP / 2, 0.011);
-        glVertex3f(GRID_STEP * selected_col + GRID_STEP / 2, GRID_STEP * selected_row + GRID_STEP / 2, 0.011);
+        glVertex3f(x + GRID_STEP, y, 0.011f);
+        glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
 
         // Jobb felső pont -> Bal felső pont
-        glVertex3f(GRID_STEP * selected_col + GRID_STEP / 2, GRID_STEP * selected_row + GRID_STEP / 2, 0.011);
-        glVertex3f(GRID_STEP * selected_col - GRID_STEP / 2, GRID_STEP * selected_row + GRID_STEP / 2, 0.011);
+        glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
+        glVertex3f(x, y + GRID_STEP, 0.011f);
 
         // Bal felső pont -> Bal alsó pont
-        glVertex3f(GRID_STEP * selected_col - GRID_STEP / 2, GRID_STEP * selected_row + GRID_STEP / 2, 0.011);
-        glVertex3f(GRID_STEP * selected_col - GRID_STEP / 2, GRID_STEP * selected_row - GRID_STEP / 2, 0.011);
+        glVertex3f(x, y + GRID_STEP, 0.011f);
+        glVertex3f(x, y, 0.011f);
     glEnd();
+
+    for (int i = 0; i < scene->grid.max_row; i++)
+    {
+        for (int j = 0; j < scene->grid.max_col; j++)
+        {
+           if (scene->grid.cells[i][j] == 1)
+            {
+                 // Számoljuk ki a pozíciót (középre rendezés)
+                float x = (j - scene->grid.max_col / 2) * GRID_STEP + GRID_STEP / 2;
+                float y = (i - scene->grid.max_row / 2) * GRID_STEP + GRID_STEP / 2;
+
+                glColor3f(1.0f, 0.0f, 0.0f); // piros
+                glBegin(GL_QUADS);
+                    glVertex3f(x - GRID_STEP / 2, y - GRID_STEP / 2, 0.02f);
+                    glVertex3f(x + GRID_STEP / 2, y - GRID_STEP / 2, 0.02f);
+                    glVertex3f(x + GRID_STEP / 2, y + GRID_STEP / 2, 0.02f);
+                    glVertex3f(x - GRID_STEP / 2, y + GRID_STEP / 2, 0.02f);
+                glEnd(); 
+            } 
+        }
+    }
+    
 
     glEnable(GL_TEXTURE_2D);  // Textúra engedélyezése (ha szükséges a többi objektumhoz)
     glEnable(GL_LIGHTING);
+
+    //Élsimítás kikapcsolása
+    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_BLEND);
 }
 
+void init_grid(Grid* grid, int rows, int cols)
+{
+    grid->max_row = rows;
+    grid->max_col = cols;
+    grid->selected_row = 0;
+    grid->selected_col = 0;
+
+    // Lefoglaljuk a sorokhoz a pointer tömböt
+    grid->cells = (int**)malloc(rows * sizeof(int*));
+    for (int i = 0; i < rows; i++) {
+        grid->cells[i] = (int*)malloc(cols * sizeof(int));
+        // Opcionális: nullázás
+        memset(grid->cells[i], 0, cols * sizeof(int));
+    }
+}
+
+void free_grid(Grid* grid)
+{
+    for (int i = 0; i < grid->max_row; i++) {
+        free(grid->cells[i]);
+    }
+    free(grid->cells);
+    grid->cells = NULL;
+}
 
 void init_scene(Scene* scene)
 {
-    // load_model(&(scene->cube), "assets/models/cube.obj");
-    // scene->texture_id = load_texture("assets/textures/cube.png");
     scene->object_count = 0;
+    init_grid(&scene->grid, 20, 20);
+
+
     printf("KEZDO SCENE = %d\n", scene->object_count);
     scene->plane_texture = load_texture("assets/textures/grass.jpg");
-  /*  load_model(&(scene->objects[scene->object_count]), "assets/models/cube.obj");
-    scene->texture_id = load_texture("assets/textures/cube.png");
-    printf("Sikeres object betoltes, ID %d",scene->object_count);
-    scene->object_count++;
 
-    load_model(&(scene->objects[scene->object_count]), "assets/models/cat.obj");
-    scene->texture_id = load_texture("assets/textures/cube.png");
-    printf("Sikeres object betoltes, ID %d",scene->object_count);
-    scene->object_count++; */
-
-   // objectCreate(scene, "assets/models/cube.obj", "assets/textures/cube.png");
-   // objectCreate(scene, "assets/models/cube.obj", "assets/textures/cube.png");
-
-    //objectCreateByID(scene, MODEL_ID, X, Y, Z);
     Model* cube = objectCreateByID(scene,0,0.0,0.0,0.5);
     objectCreateByID(scene,1,0.0,2.0,0.5);
     objectCreateByID(scene,10,0.0,4.0,0.5);
@@ -191,6 +280,7 @@ void set_material(const Material* material)
 
 void update_scene(Scene* scene)
 {
+    (void)scene;
 }
 
 //GLuint ground_texture = load_texture("assets/textures/cube.png");
@@ -198,6 +288,7 @@ void update_scene(Scene* scene)
 void draw_groundplane(const Scene* scene){
     
     glBindTexture(GL_TEXTURE_2D, scene->plane_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0f, -10.0f, 0.0f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f( 10.0f, -10.0f, 0.0f);
@@ -224,27 +315,32 @@ void render_scene(const Scene* scene)
     set_material(&(scene->material));
     set_lighting();
     draw_origin();
-        draw_groundplane(scene);
+    draw_groundplane(scene);
     draw_all_objects(scene);
-    draw_grid(20, 20,-9,-9);  // 20 soros és 20 oszlopos háló, ezt módosíthatod
+    draw_bounding_box(&scene->objects[2]);
+    draw_grid(scene);
 
 }
 
 void draw_origin()
 {
+    glDisable(GL_LIGHTING);
+     glDisable(GL_TEXTURE_2D);
     glBegin(GL_LINES);
 
     glColor3f(1, 0, 0);
-    glVertex3f(0, 0, 0);
-    glVertex3f(1, 0, 0);
+    glVertex3f(0, 0, 0.02);
+    glVertex3f(1, 0, 0.02);
 
     glColor3f(0, 1, 0);
-    glVertex3f(0, 0, 0);
-    glVertex3f(0, 1, 0);
+    glVertex3f(0, 0, 0.02);
+    glVertex3f(0, 1, 0.02);
 
     glColor3f(0, 0, 1);
-    glVertex3f(0, 0, 0);
-    glVertex3f(0, 0, 1);
+    glVertex3f(0, 0, 0.02);
+    glVertex3f(0, 0, 1.02);
 
     glEnd();
+    glEnable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
 }

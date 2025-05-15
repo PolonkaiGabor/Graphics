@@ -21,6 +21,8 @@ typedef struct Camera
  */
 void init_camera(Camera* camera);
 
+void show_texture_preview();
+
 /**
  * Update the position of the camera.
  */

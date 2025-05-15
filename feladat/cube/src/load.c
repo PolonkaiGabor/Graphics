@@ -64,7 +64,7 @@ int read_elements(Model* model, FILE* file)
     int success;
 
     allocate_model(model);
-    vertex_index = 1;
+    vertex_index = 1; // alapbol 1 volt de errorozott a bounding box
     texture_index = 1;
     normal_index = 1;
     triangle_index = 0;
