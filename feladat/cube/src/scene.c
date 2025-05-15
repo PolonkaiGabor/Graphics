@@ -157,23 +157,26 @@ void draw_grid(const Scene* scene)
     {
         for (int j = 0; j < scene->grid.max_col; j++)
         {
-           if (scene->grid.cells[i][j] == 1)
+            if (scene->grid.cells[i][j] == 1)
             {
-                 // Számoljuk ki a pozíciót (középre rendezés)
-                float x = (j - scene->grid.max_col / 2) * GRID_STEP + GRID_STEP / 2;
-                float y = (i - scene->grid.max_row / 2) * GRID_STEP + GRID_STEP / 2;
+                // Számoljuk ki a pozíciót úgy, hogy (x,y) legyen a bal alsó sarok, nem pedig középpont
+                // Először számoljuk ki az eltolást, hogy a grid középen legyen, majd innen lépkedünk
+               // float offsetX = - (scene->grid.max_col * GRID_STEP) / 2.0f;
+              //  float offsetY = - (scene->grid.max_row * GRID_STEP) / 2.0f;
 
-                glColor3f(1.0f, 0.0f, 0.0f); // piros
+                float x = j * GRID_STEP + GRID_STEP/2;
+                float y = i * GRID_STEP + GRID_STEP/2;
+
+                glColor3f(0.5f, 0.5f, 0.5f); // szurke szin
                 glBegin(GL_QUADS);
-                    glVertex3f(x - GRID_STEP / 2, y - GRID_STEP / 2, 0.02f);
-                    glVertex3f(x + GRID_STEP / 2, y - GRID_STEP / 2, 0.02f);
-                    glVertex3f(x + GRID_STEP / 2, y + GRID_STEP / 2, 0.02f);
-                    glVertex3f(x - GRID_STEP / 2, y + GRID_STEP / 2, 0.02f);
-                glEnd(); 
-            } 
+                    glVertex3f(x, y, 0.02f);                          // bal alsó
+                    glVertex3f(x + GRID_STEP, y, 0.02f);             // jobb alsó
+                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.02f); // jobb felső
+                    glVertex3f(x, y + GRID_STEP, 0.02f);             // bal felső
+                glEnd();
+            }
         }
     }
-    
 
     glEnable(GL_TEXTURE_2D);  // Textúra engedélyezése (ha szükséges a többi objektumhoz)
     glEnable(GL_LIGHTING);
