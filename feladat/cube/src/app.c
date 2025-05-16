@@ -21,7 +21,7 @@ void init_app(App* app, int width, int height)
     }
 
     app->window = SDL_CreateWindow(
-        "Cube!",
+        "The Sims 5",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         width, height,
         SDL_WINDOW_OPENGL);
@@ -42,25 +42,15 @@ void init_app(App* app, int width, int height)
         printf("[ERROR] Unable to create the OpenGL context!\n");
         return;
     }
-
-        if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-        SDL_Log("SDL_Init hiba: %s", SDL_GetError());
-        return;
+  
+    //app icon beallitas
+    SDL_Surface* icon = IMG_Load("assets/textures/icon.png");  // vagy: SDL_LoadBMP("icon.bmp")
+    if (icon == NULL) {
+        printf("Nem sikerült betölteni az ikont: %s\n", IMG_GetError());
+    } else {
+        SDL_SetWindowIcon(app->window, icon);  // ikon beállítása
+        SDL_FreeSurface(icon);            // felszabadítás beállítás után
     }
-
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        SDL_Log("Mix_OpenAudio hiba: %s", Mix_GetError());
-        return;
-    }
-
-    Mix_Music* zene = Mix_LoadMUS("zene.mp3");
-    if (!zene) {
-        SDL_Log("Zene betöltési hiba: %s", Mix_GetError());
-        return;
-    }
-
-    Mix_PlayMusic(zene, -1);  // -1: végtelen ismétlés
-
     init_opengl();
     reshape(width, height);
 
@@ -138,6 +128,7 @@ void handle_app_events(App* app)
     static int mouse_y = 0;
     int x;
     int y;
+   // const Uint8* keystates = SDL_GetKeyboardState(NULL);
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -165,28 +156,95 @@ void handle_app_events(App* app)
                 set_camera_z_speed(&(app->camera), 1.0);
                 break;
             case SDL_SCANCODE_TAB:
-                setElementPosition(&(app->scene.objects[1]), 0.0,0.0,1.0); // mukodik
+
                 break;
 
             case SDL_SCANCODE_DOWN:
                     if (app->scene.grid.selected_row > 0)
+                    {
                         app->scene.grid.selected_row--;
+
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                            app->scene.grid.selected_row_count--;
+                           // printf("SHIFT + DOWN -> Lefele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
+                        } else {
+                           // printf("DOWN -> Lefele mozgas\n");
+                        }
+                    }
                     break;
             case SDL_SCANCODE_UP:
                     if (app->scene.grid.selected_row < app->scene.grid.max_row - 1)
+                    {
                         app->scene.grid.selected_row++;
+
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]
+                            app->scene.grid.selected_row_count++;
+                           // printf("SHIFT + UP -> Felfele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
+                        } else {
+                           // printf("UP -> Felfele mozgas\n");
+                        }
+                    }
                     break;
             case SDL_SCANCODE_LEFT:
-                    if (app->scene.grid.selected_col > 0)
+                    if (app->scene.grid.selected_col > 0){
                         app->scene.grid.selected_col--;
+
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                            app->scene.grid.selected_col_count--;
+                            //printf("SHIFT + LEFT -> Balra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
+                        } else {
+                           // printf("LEFT -> Balra mozgas\n");
+                        }
+                    }
                     break;
             case SDL_SCANCODE_RIGHT:
-                    if (app->scene.grid.selected_col < app->scene.grid.max_col - 1) //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
+                    if (app->scene.grid.selected_col < app->scene.grid.max_col - 1){ //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
                         app->scene.grid.selected_col++;
+
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                            app->scene.grid.selected_col_count++;
+                            //printf("SHIFT + RIGHT -> Jobbra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
+                        } else {
+                           // printf("RIGHT -> Jobbra mozgas\n");
+                        }
+                    }
                     break;
             case SDL_SCANCODE_RETURN:
-                    app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col] = 1;
-                    printf("ROW: %d, COL: %d\n",app->scene.grid.selected_row,app->scene.grid.selected_col);
+                    if(app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1){
+                        // Ha -1, akkor az egész kijelölést rajzoljuk
+                        int row_start = app->scene.grid.selection_start[0];
+                        int col_start = app->scene.grid.selection_start[1];
+                        int row_end = row_start + app->scene.grid.selected_row_count;
+                        int col_end = col_start + app->scene.grid.selected_col_count;
+
+                        // Kiszámoljuk a min és max értékeket, hogy helyesen rajzoljon negatív érték esetén is
+                        if (row_end < row_start) {
+                            int tmp = row_start; row_start = row_end; row_end = tmp;
+                        }
+                        if (col_end < col_start) {
+                            int tmp = col_start; col_start = col_end; col_end = tmp;
+                        }
+                        for (int r = row_start; r <= row_end; r++) {
+                            for (int c = col_start; c <= col_end; c++) {
+                                app->scene.grid.cells[r][c] = 1;
+                            }
+                        }
+                        app->scene.grid.selected_col_count = 0;
+                        app->scene.grid.selected_row_count = 0;
+
+                        app->scene.grid.selection_start[0] = -1;
+                        app->scene.grid.selection_start[1] = -1;
+                    } else{
+                        app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col] = 1;
+                    }
+                    
+                    break;
+            case SDL_SCANCODE_LSHIFT:
+                    if(app->scene.grid.selection_start[0] == -1 || app->scene.grid.selection_start[1] == -1){
+                        app->scene.grid.selection_start[0] = app->scene.grid.selected_row;
+                        app->scene.grid.selection_start[1] = app->scene.grid.selected_col;
+                      //  printf("SELECTION START POS: ROW: %d, COL: %d\n",app->scene.grid.selection_start[0],app->scene.grid.selection_start[1]);
+                    }
                     break;
             default:
                 break;
