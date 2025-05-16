@@ -17,6 +17,10 @@ typedef struct Grid
     int selected_row_count;
     int selected_col_count;
     int selection_start[2];
+
+   // GLuint floor_texture_ids[1024];
+  //  Model floor_objects[1024];
+  //  int floor_count;
 } Grid;
 
 typedef struct Scene

@@ -66,15 +66,17 @@ bool setElementPosition(Model* element, float x, float y, float z) {
 void draw_grid(const Scene* scene)
 {
     glDisable(GL_LIGHTING);
-     glDisable(GL_TEXTURE_2D);  // Textúra letiltása
-    glColor4f(1.0, 1.0, 1.0, 0.75f);// Fehér szín átlátszó
-    glLineWidth(2.0);  // Vonal vastagságának beállítása (pl. 2.0)
+    glDisable(GL_TEXTURE_2D);  // Textúra letiltása
+
 
     //Élsimítás 
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(1.0, 1.0, 1.0, 1.0f);// Fehér szín átlátszó
+    glLineWidth(3.0);  // Vonal vastagságának beállítása (pl. 2.0)
 
 
     glBegin(GL_LINES);
@@ -85,8 +87,8 @@ void draw_grid(const Scene* scene)
         float x_start = GRID_STEP / 2;
         float x_end = GRID_STEP * scene->grid.max_col + GRID_STEP / 2;
 
-        glVertex3f(x_start, y, 0.01f);
-        glVertex3f(x_end, y, 0.01f);
+        glVertex3f(x_start, y, 0.02f);
+        glVertex3f(x_end, y, 0.02f);
     }
 
     // Oszlopok kirajzolása
@@ -95,8 +97,8 @@ void draw_grid(const Scene* scene)
         float y_start = GRID_STEP / 2;
         float y_end = scene->grid.max_col * GRID_STEP + GRID_STEP / 2;
 
-        glVertex3f(x, y_start, 0.01f);
-        glVertex3f(x, y_end, 0.01f);
+        glVertex3f(x, y_start, 0.02f);
+        glVertex3f(x, y_end, 0.02f);
     }
 
     glEnd();
@@ -125,17 +127,17 @@ void draw_grid(const Scene* scene)
                 float y = r * GRID_STEP + GRID_STEP / 2;
 
                 glBegin(GL_LINES);
-                    glVertex3f(x, y, 0.011f);
-                    glVertex3f(x + GRID_STEP, y, 0.011f);
+                    glVertex3f(x, y, 0.021f);
+                    glVertex3f(x + GRID_STEP, y, 0.021f);
 
-                    glVertex3f(x + GRID_STEP, y, 0.011f);
-                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
+                    glVertex3f(x + GRID_STEP, y, 0.021f);
+                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.021f);
 
-                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
-                    glVertex3f(x, y + GRID_STEP, 0.011f);
+                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.021f);
+                    glVertex3f(x, y + GRID_STEP, 0.021f);
 
-                    glVertex3f(x, y + GRID_STEP, 0.011f);
-                    glVertex3f(x, y, 0.011f);
+                    glVertex3f(x, y + GRID_STEP, 0.021f);
+                    glVertex3f(x, y, 0.021f);
                 glEnd();
             }
         }
@@ -145,22 +147,19 @@ void draw_grid(const Scene* scene)
         float y = (scene->grid.selected_row) * GRID_STEP + GRID_STEP / 2;
 
         glBegin(GL_LINES);
-            glVertex3f(x, y, 0.011f);
-            glVertex3f(x + GRID_STEP, y, 0.011f);
+            glVertex3f(x, y, 0.021f);
+            glVertex3f(x + GRID_STEP, y, 0.021f);
 
-            glVertex3f(x + GRID_STEP, y, 0.011f);
-            glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
+            glVertex3f(x + GRID_STEP, y, 0.021f);
+            glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.021f);
 
-            glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
-            glVertex3f(x, y + GRID_STEP, 0.011f);
+            glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.021f);
+            glVertex3f(x, y + GRID_STEP, 0.021f);
 
-            glVertex3f(x, y + GRID_STEP, 0.011f);
-            glVertex3f(x, y, 0.011f);
+            glVertex3f(x, y + GRID_STEP, 0.021f);
+            glVertex3f(x, y, 0.021f);
         glEnd();
     }
-
-
-
 
     for (int i = 0; i < scene->grid.max_row; i++)
     {
@@ -171,16 +170,18 @@ void draw_grid(const Scene* scene)
                 float x = j * GRID_STEP + GRID_STEP/2;
                 float y = i * GRID_STEP + GRID_STEP/2;
 
+                
                 glColor3f(0.5f, 0.5f, 0.5f); // szurke szin
                 glBegin(GL_QUADS);
-                    glVertex3f(x, y, 0.02f);                          // bal alsó
-                    glVertex3f(x + GRID_STEP, y, 0.02f);             // jobb alsó
-                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.02f); // jobb felső
-                    glVertex3f(x, y + GRID_STEP, 0.02f);             // bal felső
-                glEnd();
+                    glVertex3f(x, y, 0.01f);                          // bal alsó
+                    glVertex3f(x + GRID_STEP, y, 0.01f);             // jobb alsó
+                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.01f); // jobb felső
+                    glVertex3f(x, y + GRID_STEP, 0.01f);             // bal felső
+                glEnd(); 
             }
         }
     }
+
 
     glEnable(GL_TEXTURE_2D);  // Textúra engedélyezése (ha szükséges a többi objektumhoz)
     glEnable(GL_LIGHTING);
