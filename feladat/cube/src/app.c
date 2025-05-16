@@ -4,6 +4,9 @@
 
 #include <SDL2/SDL_image.h>
 
+#include <SDL2/SDL.h>
+#include "SDL2/SDL_mixer.h"
+
 void init_app(App* app, int width, int height)
 {
     int error_code;
@@ -33,11 +36,30 @@ void init_app(App* app, int width, int height)
         return;
     }
 
+    /////////////////////////////////////////////
     app->gl_context = SDL_GL_CreateContext(app->window);
     if (app->gl_context == NULL) {
         printf("[ERROR] Unable to create the OpenGL context!\n");
         return;
     }
+
+        if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        SDL_Log("SDL_Init hiba: %s", SDL_GetError());
+        return;
+    }
+
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        SDL_Log("Mix_OpenAudio hiba: %s", Mix_GetError());
+        return;
+    }
+
+    Mix_Music* zene = Mix_LoadMUS("zene.mp3");
+    if (!zene) {
+        SDL_Log("Zene betöltési hiba: %s", Mix_GetError());
+        return;
+    }
+
+    Mix_PlayMusic(zene, -1);  // -1: végtelen ismétlés
 
     init_opengl();
     reshape(width, height);
