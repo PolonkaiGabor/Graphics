@@ -13,6 +13,10 @@ typedef struct Grid
     int max_row;
     int max_col;
     int** cells;  // 2D dinamikus tömb
+
+    int selected_row_count;
+    int selected_col_count;
+    int selection_start[2];
 } Grid;
 
 typedef struct Scene

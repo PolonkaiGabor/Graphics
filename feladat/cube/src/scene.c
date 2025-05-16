@@ -81,10 +81,6 @@ void draw_grid(const Scene* scene)
 
     // Sorok kirajzolása
     for (int i = 0; i <= scene->grid.max_row; i++) {
-        //float y = (i - scene->grid.max_row / 2) * GRID_STEP + GRID_STEP / 2;
-        //float x_start = -GRID_STEP * scene->grid.max_col / 2 + GRID_STEP / 2;
-        //float x_end = GRID_STEP * scene->grid.max_col / 2 + GRID_STEP / 2;
-
         float y = i * GRID_STEP + GRID_STEP / 2;
         float x_start = GRID_STEP / 2;
         float x_end = GRID_STEP * scene->grid.max_col + GRID_STEP / 2;
@@ -95,10 +91,6 @@ void draw_grid(const Scene* scene)
 
     // Oszlopok kirajzolása
     for (int i = 0; i <= scene->grid.max_col; i++) {
-        //float x = (i - scene->grid.max_col / 2) * GRID_STEP + GRID_STEP / 2;
-        //float y_start = -GRID_STEP * scene->grid.max_row / 2 + GRID_STEP / 2;
-       // float y_end = GRID_STEP * scene->grid.max_row / 2 + GRID_STEP / 2;
-
         float x = i * GRID_STEP + GRID_STEP / 2;
         float y_start = GRID_STEP / 2;
         float y_end = scene->grid.max_col * GRID_STEP + GRID_STEP / 2;
@@ -112,46 +104,63 @@ void draw_grid(const Scene* scene)
     glColor3f(0.0, 0.0, 1.0);  // Kék szín
     glLineWidth(3.0);
 
-   /* float x = (scene->grid.selected_col - scene->grid.max_col / 2) * GRID_STEP;
-    float y = (scene->grid.selected_row - scene->grid.max_row / 2) * GRID_STEP;
-    glBegin(GL_LINES);  // Négyzetet rajzolunk
-        // Bal alsó pont -> Jobb alsó pont
-        glVertex3f(x - GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
-        glVertex3f(x + GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
+    if (scene->grid.selection_start[0] != -1) {
+        // Ha -1, akkor az egész kijelölést rajzoljuk
+        int row_start = scene->grid.selection_start[0];
+        int col_start = scene->grid.selection_start[1];
+        int row_end = row_start + scene->grid.selected_row_count;
+        int col_end = col_start + scene->grid.selected_col_count;
 
-        // Jobb alsó pont -> Jobb felső pont
-        glVertex3f(x + GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
-        glVertex3f(x + GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
+        // Kiszámoljuk a min és max értékeket, hogy helyesen rajzoljon negatív érték esetén is
+        if (row_end < row_start) {
+            int tmp = row_start; row_start = row_end; row_end = tmp;
+        }
+        if (col_end < col_start) {
+            int tmp = col_start; col_start = col_end; col_end = tmp;
+        }
 
-        // Jobb felső pont -> Bal felső pont
-        glVertex3f(x + GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
-        glVertex3f(x - GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
+        for (int r = row_start; r <= row_end; r++) {
+            for (int c = col_start; c <= col_end; c++) {
+                float x = c * GRID_STEP + GRID_STEP / 2;
+                float y = r * GRID_STEP + GRID_STEP / 2;
 
-        // Bal felső pont -> Bal alsó pont
-        glVertex3f(x - GRID_STEP / 2, y + GRID_STEP / 2, 0.011);
-        glVertex3f(x - GRID_STEP / 2, y - GRID_STEP / 2, 0.011);
-    glEnd(); */
+                glBegin(GL_LINES);
+                    glVertex3f(x, y, 0.011f);
+                    glVertex3f(x + GRID_STEP, y, 0.011f);
 
-    float x = (scene->grid.selected_col) * GRID_STEP + GRID_STEP / 2; // Bal alsó sarok x koordinátája
-    float y = (scene->grid.selected_row) * GRID_STEP + GRID_STEP / 2; // Bal alsó sarok y koordinátája
+                    glVertex3f(x + GRID_STEP, y, 0.011f);
+                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
 
-    glBegin(GL_LINES);  // Négyzetet rajzolunk
-        // Bal alsó pont -> Jobb alsó pont
-        glVertex3f(x, y, 0.011f);
-        glVertex3f(x + GRID_STEP, y, 0.011f);
+                    glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
+                    glVertex3f(x, y + GRID_STEP, 0.011f);
 
-        // Jobb alsó pont -> Jobb felső pont
-        glVertex3f(x + GRID_STEP, y, 0.011f);
-        glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
+                    glVertex3f(x, y + GRID_STEP, 0.011f);
+                    glVertex3f(x, y, 0.011f);
+                glEnd();
+            }
+        }
+    } else {
+        // Csak egy cellát rajzolunk ki a selected_row és selected_col alapján
+        float x = (scene->grid.selected_col) * GRID_STEP + GRID_STEP / 2;
+        float y = (scene->grid.selected_row) * GRID_STEP + GRID_STEP / 2;
 
-        // Jobb felső pont -> Bal felső pont
-        glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
-        glVertex3f(x, y + GRID_STEP, 0.011f);
+        glBegin(GL_LINES);
+            glVertex3f(x, y, 0.011f);
+            glVertex3f(x + GRID_STEP, y, 0.011f);
 
-        // Bal felső pont -> Bal alsó pont
-        glVertex3f(x, y + GRID_STEP, 0.011f);
-        glVertex3f(x, y, 0.011f);
-    glEnd();
+            glVertex3f(x + GRID_STEP, y, 0.011f);
+            glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
+
+            glVertex3f(x + GRID_STEP, y + GRID_STEP, 0.011f);
+            glVertex3f(x, y + GRID_STEP, 0.011f);
+
+            glVertex3f(x, y + GRID_STEP, 0.011f);
+            glVertex3f(x, y, 0.011f);
+        glEnd();
+    }
+
+
+
 
     for (int i = 0; i < scene->grid.max_row; i++)
     {
@@ -159,11 +168,6 @@ void draw_grid(const Scene* scene)
         {
             if (scene->grid.cells[i][j] == 1)
             {
-                // Számoljuk ki a pozíciót úgy, hogy (x,y) legyen a bal alsó sarok, nem pedig középpont
-                // Először számoljuk ki az eltolást, hogy a grid középen legyen, majd innen lépkedünk
-               // float offsetX = - (scene->grid.max_col * GRID_STEP) / 2.0f;
-              //  float offsetY = - (scene->grid.max_row * GRID_STEP) / 2.0f;
-
                 float x = j * GRID_STEP + GRID_STEP/2;
                 float y = i * GRID_STEP + GRID_STEP/2;
 
@@ -190,8 +194,15 @@ void init_grid(Grid* grid, int rows, int cols)
 {
     grid->max_row = rows;
     grid->max_col = cols;
+
     grid->selected_row = 0;
     grid->selected_col = 0;
+
+    grid->selected_col_count = 0;
+    grid->selected_row_count = 0;
+
+    grid->selection_start[0] = -1;
+    grid->selection_start[1] = -1;
 
     // Lefoglaljuk a sorokhoz a pointer tömböt
     grid->cells = (int**)malloc(rows * sizeof(int*));
@@ -221,7 +232,7 @@ void init_scene(Scene* scene)
     scene->plane_texture = load_texture("assets/textures/grass.jpg");
 
     Model* cube = objectCreateByID(scene,0,0.0,0.0,0.5);
-    objectCreateByID(scene,1,0.0,2.0,0.5);
+   // objectCreateByID(scene,1,0.0,2.0,0.5);
     objectCreateByID(scene,10,0.0,4.0,0.5);
 
     setElementPosition(cube, 0.0f, 0.0f, 3.0f); 
