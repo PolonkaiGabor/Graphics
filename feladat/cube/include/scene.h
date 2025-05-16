@@ -39,12 +39,21 @@ typedef struct ObjectTemplate{
     int id;
     char* model_path;
     char* texture_path;
+
+    Model cached_model;       // egyszer betöltött modell
+    GLuint cached_texture_id; // egyszer betöltött textúra ID
+
+    bool model_loaded;
+    bool texture_loaded;
+
 } ObjectTemplate;
 
 /**
  * Initialize the scene by loading models.
  */
 void init_scene(Scene* scene);
+
+void createFloorObject(Scene* scene, int row, int col);
 
 /**
  * Set the lighting of the scene.

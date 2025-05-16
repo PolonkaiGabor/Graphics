@@ -105,11 +105,8 @@ void reshape(GLsizei width, GLsizei height)
     glViewport(x, y, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(
-        -.08, .08,
-        -.06, .06,
-        .1, 20
-    );
+    glFrustum(-.08, .08, -.06, .06, 0.1, 200);
+    
 }
 
 typedef struct {
@@ -138,22 +135,22 @@ void handle_app_events(App* app)
                 app->is_running = false;
                 break;
             case SDL_SCANCODE_W:
-                set_camera_speed(&(app->camera), 1);
+                set_camera_speed(&(app->camera), 5);
                 break;
             case SDL_SCANCODE_S:
-                set_camera_speed(&(app->camera), -1);
+                set_camera_speed(&(app->camera), -5);
                 break;
             case SDL_SCANCODE_A:
-                set_camera_side_speed(&(app->camera), 1);
+                set_camera_side_speed(&(app->camera), 5);
                 break;
             case SDL_SCANCODE_D:
-                set_camera_side_speed(&(app->camera), -1);
+                set_camera_side_speed(&(app->camera), -5);
                 break;
             case SDL_SCANCODE_LCTRL:
-                set_camera_z_speed(&(app->camera), -1.0);
+                set_camera_z_speed(&(app->camera), -5.0);
                 break;
             case SDL_SCANCODE_SPACE:
-                set_camera_z_speed(&(app->camera), 1.0);
+                set_camera_z_speed(&(app->camera), 5.0);
                 break;
             case SDL_SCANCODE_TAB:
 
@@ -226,9 +223,14 @@ void handle_app_events(App* app)
                         }
                         for (int r = row_start; r <= row_end; r++) {
                             for (int c = col_start; c <= col_end; c++) {
-                                app->scene.grid.cells[r][c] = 1;
+                                if(app->scene.grid.cells[r][c] != 1){
+                                    app->scene.grid.cells[r][c] = 1;
+                                    createFloorObject(&app->scene, r, c);
+                                }
                             }
                         }
+                        
+
                         app->scene.grid.selected_col_count = 0;
                         app->scene.grid.selected_row_count = 0;
 

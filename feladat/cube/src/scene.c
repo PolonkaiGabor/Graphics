@@ -8,13 +8,23 @@
 
 #include <SDL2/SDL.h>
 
-const ObjectTemplate object_templates[] = {
-    {0, "assets/models/cube.obj", "assets/textures/cube.png"},
-    {1, "assets/models/cube.obj", "assets/textures/cube.png"},
-    {10, "assets/models/cat.obj", "assets/textures/cube.png"}, // kuka
+ObjectTemplate object_templates[] = {
+    { .id = 0, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
+    { .id = 1, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
+    { .id = 2, .model_path = "assets/models/floor5.obj", .texture_path = "assets/textures/wood_floor.jpg" },
+    { .id = 10, .model_path = "assets/models/cat.obj", .texture_path = "assets/textures/cube.png" }, 
     // stb.
 };
 const int object_template_count = sizeof(object_templates) / sizeof(ObjectTemplate);
+
+void init_templates() {
+    for (int i = 0; i < object_template_count; i++) {
+        object_templates[i].model_loaded = false;
+        object_templates[i].texture_loaded = false;
+        memset(&object_templates[i].cached_model, 0, sizeof(Model));
+        object_templates[i].cached_texture_id = 0;
+    }
+}
 
 
 Model* objectCreateByID(Scene* scene, int id, float x, float y, float z) {
@@ -25,8 +35,20 @@ Model* objectCreateByID(Scene* scene, int id, float x, float y, float z) {
                 return NULL;
             }
 
-            // Betöltjük a modellt
-            load_model(&scene->objects[scene->object_count], object_templates[i].model_path);
+            // Modell cache betöltése
+            if (!object_templates[i].model_loaded) { //igy gyorsabb a betoltes mivel nem kell minden modelt egyesevvel ujra olvastatni
+                load_model(&object_templates[i].cached_model, object_templates[i].model_path);
+                object_templates[i].model_loaded = true;
+            }
+
+            // Textúra cache betöltése
+            if (!object_templates[i].texture_loaded) {
+                object_templates[i].cached_texture_id = load_texture(object_templates[i].texture_path);
+                object_templates[i].texture_loaded = true;
+            }
+
+            // Objektum példányosítás
+            scene->objects[scene->object_count] = object_templates[i].cached_model;
 
             // Beállítjuk a pozíciókat
             scene->objects[scene->object_count].pos_x = x;
@@ -34,7 +56,7 @@ Model* objectCreateByID(Scene* scene, int id, float x, float y, float z) {
             scene->objects[scene->object_count].pos_z = z;
 
             // Textúra betöltés
-            scene->texture_ids[scene->object_count] = load_texture(object_templates[i].texture_path);
+            scene->texture_ids[scene->object_count] = object_templates[i].cached_texture_id;
 
             printf("Sikeres object betoltes: ID=%d -> scene index %d\n", id, scene->object_count);
 
@@ -59,7 +81,7 @@ bool setElementPosition(Model* element, float x, float y, float z) {
     return true;
 }
 
-#define GRID_STEP 0.1  // Térköz
+#define GRID_STEP 1  // Térköz
 #define GRID_SIZE 10   // Alapértelmezett oszlopok és sorok száma
 
 // A háló kirajzolásáért felelős függvény
@@ -83,9 +105,9 @@ void draw_grid(const Scene* scene)
 
     // Sorok kirajzolása
     for (int i = 0; i <= scene->grid.max_row; i++) {
-        float y = i * GRID_STEP + GRID_STEP / 2;
-        float x_start = GRID_STEP / 2;
-        float x_end = GRID_STEP * scene->grid.max_col + GRID_STEP / 2;
+        float y = i * GRID_STEP + GRID_STEP / 2.0;
+        float x_start = GRID_STEP / 2.0;
+        float x_end = GRID_STEP * scene->grid.max_col + GRID_STEP / 2.0;
 
         glVertex3f(x_start, y, 0.02f);
         glVertex3f(x_end, y, 0.02f);
@@ -93,9 +115,9 @@ void draw_grid(const Scene* scene)
 
     // Oszlopok kirajzolása
     for (int i = 0; i <= scene->grid.max_col; i++) {
-        float x = i * GRID_STEP + GRID_STEP / 2;
-        float y_start = GRID_STEP / 2;
-        float y_end = scene->grid.max_col * GRID_STEP + GRID_STEP / 2;
+        float x = i * GRID_STEP + GRID_STEP / 2.0;
+        float y_start = GRID_STEP / 2.0;
+        float y_end = scene->grid.max_col * GRID_STEP + GRID_STEP / 2.0;
 
         glVertex3f(x, y_start, 0.02f);
         glVertex3f(x, y_end, 0.02f);
@@ -123,8 +145,8 @@ void draw_grid(const Scene* scene)
 
         for (int r = row_start; r <= row_end; r++) {
             for (int c = col_start; c <= col_end; c++) {
-                float x = c * GRID_STEP + GRID_STEP / 2;
-                float y = r * GRID_STEP + GRID_STEP / 2;
+                float x = c * GRID_STEP + GRID_STEP / 2.0;
+                float y = r * GRID_STEP + GRID_STEP / 2.0;
 
                 glBegin(GL_LINES);
                     glVertex3f(x, y, 0.021f);
@@ -143,8 +165,8 @@ void draw_grid(const Scene* scene)
         }
     } else {
         // Csak egy cellát rajzolunk ki a selected_row és selected_col alapján
-        float x = (scene->grid.selected_col) * GRID_STEP + GRID_STEP / 2;
-        float y = (scene->grid.selected_row) * GRID_STEP + GRID_STEP / 2;
+        float x = (scene->grid.selected_col) * GRID_STEP + GRID_STEP / 2.0;
+        float y = (scene->grid.selected_row) * GRID_STEP + GRID_STEP / 2.0;
 
         glBegin(GL_LINES);
             glVertex3f(x, y, 0.021f);
@@ -161,14 +183,15 @@ void draw_grid(const Scene* scene)
         glEnd();
     }
 
+    /*
     for (int i = 0; i < scene->grid.max_row; i++)
     {
         for (int j = 0; j < scene->grid.max_col; j++)
         {
             if (scene->grid.cells[i][j] == 1)
             {
-                float x = j * GRID_STEP + GRID_STEP/2;
-                float y = i * GRID_STEP + GRID_STEP/2;
+                float x = j * GRID_STEP + GRID_STEP/2.0;
+                float y = i * GRID_STEP + GRID_STEP/2.0;
 
                 
                 glColor3f(0.5f, 0.5f, 0.5f); // szurke szin
@@ -180,7 +203,7 @@ void draw_grid(const Scene* scene)
                 glEnd(); 
             }
         }
-    }
+    } */
 
 
     glEnable(GL_TEXTURE_2D);  // Textúra engedélyezése (ha szükséges a többi objektumhoz)
@@ -189,6 +212,14 @@ void draw_grid(const Scene* scene)
     //Élsimítás kikapcsolása
     glDisable(GL_LINE_SMOOTH);
     glDisable(GL_BLEND);
+}
+
+void createFloorObject(Scene* scene, int row, int col){
+    float x = (col * GRID_STEP)+(GRID_STEP);
+    float y = (row * GRID_STEP)+(GRID_STEP);
+    float z = 0.02f;
+
+    objectCreateByID(scene, 2, x, y, z);
 }
 
 void init_grid(Grid* grid, int rows, int cols)
@@ -226,6 +257,7 @@ void free_grid(Grid* grid)
 void init_scene(Scene* scene)
 {
     scene->object_count = 0;
+    init_templates();
     init_grid(&scene->grid, 20, 20);
 
 
