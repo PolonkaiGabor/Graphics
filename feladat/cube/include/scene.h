@@ -12,7 +12,7 @@ typedef struct Grid
     int selected_col;
     int max_row;
     int max_col;
-    int** cells;  // 2D dinamikus tömb
+    Cell** cells;  // 2D dinamikus tömb
 
     int selected_row_count;
     int selected_col_count;
@@ -23,6 +23,13 @@ typedef struct Grid
   //  int floor_count;
 } Grid;
 
+typedef struct Cell
+{
+    int occupied;
+    Model* object;
+    GLuint texture_id;
+} Cell;
+
 typedef struct Scene
 {
     Model objects[1024];
@@ -31,7 +38,7 @@ typedef struct Scene
     GLuint texture_ids[1024];
     GLuint plane_texture;
     Grid grid;
-
+    //Grid wall_grid;
 } Scene;
 
 

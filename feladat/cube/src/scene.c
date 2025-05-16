@@ -196,7 +196,9 @@ void createFloorObject(Scene* scene, int row, int col){
     float y = (row * GRID_STEP)+(GRID_STEP);
     float z = 0.0f;
 
-    objectCreateByID(scene, 2, x, y, z);
+    Model* floor = objectCreateByID(scene, 2, x, y, z);
+  //  scene->grid.cells[row][col].object = floor;
+  //  scene->grid.cells[row][col].texture_id = object_templates[2].cached_texture_id;
 }
 
 void init_grid(Grid* grid, int rows, int cols)
@@ -213,22 +215,27 @@ void init_grid(Grid* grid, int rows, int cols)
     grid->selection_start[0] = -1;
     grid->selection_start[1] = -1;
 
-    // Lefoglaljuk a sorokhoz a pointer tömböt
-    grid->cells = (int**)malloc(rows * sizeof(int*));
-    for (int i = 0; i < rows; i++) {
-        grid->cells[i] = (int*)malloc(cols * sizeof(int));
-        // Opcionális: nullázás
-        memset(grid->cells[i], 0, cols * sizeof(int));
-    }
-}
 
-void free_grid(Grid* grid)
-{
-    for (int i = 0; i < grid->max_row; i++) {
-        free(grid->cells[i]);
+    grid->cells = (Cell**)malloc(rows * sizeof(Cell*));
+    if (grid->cells == NULL) {
+        fprintf(stderr, "Memory allocation failed for rows.\n");
+        exit(1);
     }
-    free(grid->cells);
-    grid->cells = NULL;
+
+    for (int r = 0; r < rows; r++) {
+        grid->cells[r] = (Cell*)malloc(cols * sizeof(Cell));
+        if (grid->cells[r] == NULL) {
+            fprintf(stderr, "Memory allocation failed for columns in row %d.\n", r);
+            exit(1);
+        }
+
+        for (int c = 0; c < cols; c++) {
+            grid->cells[r][c].occupied = 0;
+            grid->cells[r][c].texture_id = 0;
+            // opcionálisan: memset a modelre, vagy egyéb inicializálás
+        }
+    }
+
 }
 
 void init_scene(Scene* scene)

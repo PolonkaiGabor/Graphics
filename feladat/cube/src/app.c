@@ -223,8 +223,8 @@ void handle_app_events(App* app)
                         }
                         for (int r = row_start; r <= row_end; r++) {
                             for (int c = col_start; c <= col_end; c++) {
-                                if(app->scene.grid.cells[r][c] != 1){
-                                    app->scene.grid.cells[r][c] = 1;
+                                if(app->scene.grid.cells[r][c].occupied != 1){
+                                    app->scene.grid.cells[r][c].occupied = 1;
                                     createFloorObject(&app->scene, r, c);
                                 }
                             }
@@ -237,7 +237,8 @@ void handle_app_events(App* app)
                         app->scene.grid.selection_start[0] = -1;
                         app->scene.grid.selection_start[1] = -1;
                     } else{
-                        app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col] = 1;
+                        app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].occupied = 1;
+                        createFloorObject(&app->scene, app->scene.grid.selected_row, app->scene.grid.selected_col);
                     }
                     
                     break;
