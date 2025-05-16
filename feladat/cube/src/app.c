@@ -4,6 +4,9 @@
 
 #include <SDL2/SDL_image.h>
 
+#include <SDL2/SDL.h>
+#include "SDL2/SDL_mixer.h"
+
 void init_app(App* app, int width, int height)
 {
     int error_code;
@@ -33,12 +36,13 @@ void init_app(App* app, int width, int height)
         return;
     }
 
+    /////////////////////////////////////////////
     app->gl_context = SDL_GL_CreateContext(app->window);
     if (app->gl_context == NULL) {
         printf("[ERROR] Unable to create the OpenGL context!\n");
         return;
     }
-
+  
     //app icon beallitas
     SDL_Surface* icon = IMG_Load("assets/textures/icon.png");  // vagy: SDL_LoadBMP("icon.bmp")
     if (icon == NULL) {
@@ -47,7 +51,6 @@ void init_app(App* app, int width, int height)
         SDL_SetWindowIcon(app->window, icon);  // ikon beállítása
         SDL_FreeSurface(icon);            // felszabadítás beállítás után
     }
-
     init_opengl();
     reshape(width, height);
 
