@@ -6,6 +6,13 @@
 
 #include "model.h"
 
+typedef struct Cell
+{
+    int occupied;
+    Model* object;
+    int texture_id;
+} Cell;
+
 typedef struct Grid
 {
     int selected_row;
@@ -23,22 +30,19 @@ typedef struct Grid
   //  int floor_count;
 } Grid;
 
-typedef struct Cell
-{
-    int occupied;
-    Model* object;
-    GLuint texture_id;
-} Cell;
+
 
 typedef struct Scene
 {
     Model objects[1024];
     int object_count;
+
     Material material;
-    GLuint texture_ids[1024];
+    GLuint texture_ids[1024]; //egyedi texturak minden objektumhoz
+    int texture_count;
+
     GLuint plane_texture;
     Grid grid;
-    //Grid wall_grid;
 } Scene;
 
 
@@ -55,12 +59,21 @@ typedef struct ObjectTemplate{
 
 } ObjectTemplate;
 
+typedef struct {
+    int texture_key;
+    GLuint texture_id;       // OpenGL által generált textúra azonosító
+    char* texture_path; // A textúra fájl elérési útja
+    bool texture_loaded;
+} TextureEntry;
+
 /**
  * Initialize the scene by loading models.
  */
 void init_scene(Scene* scene);
 
-void createFloorObject(Scene* scene, int row, int col);
+void createFloorObject(Scene* scene, int row, int col, int textureID);
+
+void setElementTexture(Scene* scene,Model* element,int textureKeyID);
 
 /**
  * Set the lighting of the scene.

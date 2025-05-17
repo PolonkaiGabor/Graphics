@@ -17,6 +17,14 @@ ObjectTemplate object_templates[] = {
 };
 const int object_template_count = sizeof(object_templates) / sizeof(ObjectTemplate);
 
+TextureEntry textures[] = {
+    { 0, 0, "assets/textures/wood_floor.png", false },
+    { 1, 0, "assets/textures/black_stones_floor.jpg", false },
+    { 2, 0, "assets/textures/rustic_wood_floor.jpg", false }
+};
+
+const int textureEntry_count = sizeof(textures) / sizeof(TextureEntry);
+
 void init_templates() {
     for (int i = 0; i < object_template_count; i++) {
         object_templates[i].model_loaded = false;
@@ -67,6 +75,39 @@ Model* objectCreateByID(Scene* scene, int id, float x, float y, float z) {
 
     printf("Ismeretlen object ID: %d\n", id);
     return NULL;
+}
+
+int getSceneObjectIndexByModel(Scene* scene, Model* model) {
+    for (int i = 0; i < scene->object_count; i++) {
+        if (&scene->objects[i] == model) {
+            return i;  // Megtaláltuk: visszaadjuk az indexet
+        }
+    }
+    return -1; // Nem található
+}
+
+int get_texture_index(int key) {
+    for (int i = 0; i < textureEntry_count; i++) {
+        if (textures[i].texture_key == key) {
+            return i;
+        }
+    }
+    return -1; // nem található
+}
+
+void setElementTexture(Scene* scene,Model* element,int textureKeyID){
+    int textureIndex = get_texture_index(textureKeyID);
+    if(textureIndex == -1){
+        printf("nemtalalhato ilyen textura\n");
+        return;
+    }
+    if (!textures[textureIndex].texture_loaded) {
+        textures[textureIndex].texture_id = load_texture((char*)textures[textureIndex].texture_path);
+        textures[textureIndex].texture_loaded = true;
+    }
+
+    int index = getSceneObjectIndexByModel(scene,element);
+    scene->texture_ids[index] = textures[textureIndex].texture_id;
 }
 
 bool setElementPosition(Model* element, float x, float y, float z) {
@@ -191,14 +232,17 @@ void draw_grid(const Scene* scene)
     glDisable(GL_BLEND);
 }
 
-void createFloorObject(Scene* scene, int row, int col){
+void createFloorObject(Scene* scene, int row, int col, int textureID){
     float x = (col * GRID_STEP)+(GRID_STEP);
     float y = (row * GRID_STEP)+(GRID_STEP);
     float z = 0.0f;
 
     Model* floor = objectCreateByID(scene, 2, x, y, z);
-  //  scene->grid.cells[row][col].object = floor;
-  //  scene->grid.cells[row][col].texture_id = object_templates[2].cached_texture_id;
+    if(textureID != 0){
+        setElementTexture(scene,floor,textureID);
+    }
+    scene->grid.cells[row][col].object = floor;
+    scene->grid.cells[row][col].texture_id = textureID;
 }
 
 void init_grid(Grid* grid, int rows, int cols)
@@ -231,7 +275,7 @@ void init_grid(Grid* grid, int rows, int cols)
 
         for (int c = 0; c < cols; c++) {
             grid->cells[r][c].occupied = 0;
-            grid->cells[r][c].texture_id = 0;
+           // grid->cells[r][c].texture_id = 0;
             // opcionálisan: memset a modelre, vagy egyéb inicializálás
         }
     }

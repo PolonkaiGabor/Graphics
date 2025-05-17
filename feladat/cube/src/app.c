@@ -125,6 +125,7 @@ void handle_app_events(App* app)
     static int mouse_y = 0;
     int x;
     int y;
+    int selectedTexture = 1;
    // const Uint8* keystates = SDL_GetKeyboardState(NULL);
 
     while (SDL_PollEvent(&event)) {
@@ -225,7 +226,12 @@ void handle_app_events(App* app)
                             for (int c = col_start; c <= col_end; c++) {
                                 if(app->scene.grid.cells[r][c].occupied != 1){
                                     app->scene.grid.cells[r][c].occupied = 1;
-                                    createFloorObject(&app->scene, r, c);
+                                    createFloorObject(&app->scene, r, c, 0);
+                                }else{
+                                    if (selectedTexture != app->scene.grid.cells[r][c].texture_id){
+                                        setElementTexture(&app->scene, app->scene.grid.cells[r][c].object, selectedTexture);
+                                        app->scene.grid.cells[r][c].texture_id = selectedTexture;
+                                    }
                                 }
                             }
                         }
@@ -237,8 +243,15 @@ void handle_app_events(App* app)
                         app->scene.grid.selection_start[0] = -1;
                         app->scene.grid.selection_start[1] = -1;
                     } else{
-                        app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].occupied = 1;
-                        createFloorObject(&app->scene, app->scene.grid.selected_row, app->scene.grid.selected_col);
+                        if(app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].occupied != 1){
+                            app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].occupied = 1;
+                            createFloorObject(&app->scene, app->scene.grid.selected_row, app->scene.grid.selected_col,0);
+                        }else{
+                            if (selectedTexture != app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].texture_id){
+                                setElementTexture(&app->scene, app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].object, selectedTexture);
+                                app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].texture_id = selectedTexture;
+                            }
+                        }
                     }
                     
                     break;
