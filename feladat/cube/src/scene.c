@@ -10,10 +10,13 @@
 
 #include <SDL2/SDL.h>
 
+#define WALL_GRID_STEP 0.5  // Térköz
+
 ObjectTemplate object_templates[] = {
     { .id = 0, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
     { .id = 1, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
     { .id = 2, .model_path = "assets/models/floor5.obj", .texture_path = "assets/textures/wood_floor.jpg" },
+    { .id = 3, .model_path = "assets/models/wall4.obj", .texture_path = "assets/textures/wall_1.jpg" },
     { .id = 10, .model_path = "assets/models/cat.obj", .texture_path = "assets/textures/cube.png" }, 
     // stb.
 };
@@ -120,6 +123,19 @@ bool setElementPosition(Model* element, float x, float y, float z) {
     element->pos_x = x;
     element->pos_y = y;
     element->pos_z = z;
+
+    return true;
+}
+
+bool setElementRotation(Model* element, float rot_x_deg, float rot_y_deg, float rot_z_deg) {
+    if (element == NULL) {
+        return false;
+    }
+    printf("asdsddssd\n");
+
+    element->rot_x = rot_x_deg;
+    element->rot_y = rot_y_deg;
+    element->rot_z = rot_z_deg;
 
     return true;
 }
@@ -233,22 +249,57 @@ void draw_grid(const Scene* scene)
     glDisable(GL_BLEND);
 }
 
-void createFloorObject(Scene* scene, int row, int col, int textureID){
-    float x = (col * GRID_STEP)+(GRID_STEP);
-    float y = (row * GRID_STEP)+(GRID_STEP);
+void createFloorObject(Scene* scene, Grid* grid, int row, int col, int textureID, int type){
+    float x;
+    float y;
     float z = 0.0f;
-
-    Model* floor = objectCreateByID(scene, 2, x, y, z);
-    if(textureID != 0){
-        setElementTexture(scene,floor,textureID);
+    float rot_x=0.0, rot_y=0.0, rot_z=0.0;
+    
+    if (type == 0) {
+        x = (col * GRID_STEP)+(GRID_STEP);
+        y = (row * GRID_STEP)+(GRID_STEP);
+    } else{
+        x = (col * WALL_GRID_STEP)+(WALL_GRID_STEP);
+        y = (row * WALL_GRID_STEP)+(WALL_GRID_STEP);
     }
-    scene->grid.cells[row][col].object = floor;
-    scene->grid.cells[row][col].texture_id = textureID;
+
+    if(grid->selected_type == EDGE_HORIZONTAL){
+        x = (col * WALL_GRID_STEP)+(WALL_GRID_STEP+WALL_GRID_STEP/2);
+        z = 0.5f;
+    }else if(grid->selected_type == EDGE_VERTICAL){
+        y = (row * WALL_GRID_STEP)+(WALL_GRID_STEP+WALL_GRID_STEP/2);
+        z = 0.5f;
+        rot_z = 90.0f;
+    } 
+
+    int obj_id;
+
+    if (type == 0) {
+        obj_id = 2;
+    }else{
+        obj_id = 3;
+    }
+
+    Model* object = objectCreateByID(scene, obj_id, x, y, z);
+    setElementRotation(object, rot_x, rot_y, rot_z);
+    if(textureID != 0){
+        setElementTexture(scene,object,textureID);
+    }
+    if(grid->selected_type == EDGE_NONE){
+        grid->cells[row][col].object = object;
+        grid->cells[row][col].texture_id = textureID;
+    }else if(grid->selected_type == EDGE_HORIZONTAL){
+        grid->cells[row][col].horizontal_wall_object = object;
+        grid->cells[row][col].horizontal_object_texture_id = textureID;
+    }else if(grid->selected_type == EDGE_VERTICAL){
+        grid->cells[row][col].vertical_wall_object = object;
+        grid->cells[row][col].vertical_object_texture_id = textureID;
+    }
 }
 
 //////////////////////////////////////////////////////////
 
-#define WALL_GRID_STEP 0.5  // Térköz
+
 
 // A háló kirajzolásáért felelős függvény
 void draw_wall_grid(const Scene* scene)
@@ -270,20 +321,20 @@ void draw_wall_grid(const Scene* scene)
     glBegin(GL_LINES);
 
     // Sorok kirajzolása
-    for (int i = 0; i <= scene->wall_grid.max_row; i++) {
+    for (int i = 0; i <= scene->wall_grid.max_row-1; i++) {
         float y = i * WALL_GRID_STEP + GRID_STEP / 2.0;
         float x_start = GRID_STEP / 2.0;
-        float x_end = WALL_GRID_STEP * scene->wall_grid.max_col + GRID_STEP / 2.0;
+        float x_end = WALL_GRID_STEP * scene->wall_grid.max_col + GRID_STEP / 2.0 - WALL_GRID_STEP;
 
         glVertex3f(x_start, y, 0.02f);
         glVertex3f(x_end, y, 0.02f);
     }
 
     // Oszlopok kirajzolása
-    for (int i = 0; i <= scene->wall_grid.max_col; i++) {
+    for (int i = 0; i <= scene->wall_grid.max_col-1; i++) {
         float x = i * WALL_GRID_STEP + GRID_STEP / 2.0;
         float y_start = GRID_STEP / 2.0;
-        float y_end = scene->wall_grid.max_col * WALL_GRID_STEP + GRID_STEP / 2.0;
+        float y_end = scene->wall_grid.max_col * WALL_GRID_STEP + GRID_STEP / 2.0 - WALL_GRID_STEP;
 
         glVertex3f(x, y_start, 0.02f);
         glVertex3f(x, y_end, 0.02f);
@@ -293,25 +344,59 @@ void draw_wall_grid(const Scene* scene)
 
     glColor3f(0.0f, 0.0f, 1.0f); // kék
     glLineWidth(3.0f);
+    if (scene->wall_grid.selection_start[0] != -1 || scene->wall_grid.selection_start[1] != -1) {
 
-    int row = scene->wall_grid.selected_row;
-    int col = scene->wall_grid.selected_col;
-    EdgeType type = scene->wall_grid.selected_type;
+        int row_start = scene->wall_grid.selection_start[0];
+        int col_start = scene->wall_grid.selection_start[1];
+        int row_end = row_start + scene->wall_grid.selected_row_count;
+        int col_end = col_start + scene->wall_grid.selected_col_count;
+        EdgeType type = scene->wall_grid.selected_type;
 
-    if (type == EDGE_NONE || row < 0 || col < 0) return;
+        // Kiszámoljuk a min és max értékeket, hogy helyesen rajzoljon negatív érték esetén is
+        if (row_end < row_start) {
+            int tmp = row_start; row_start = row_end; row_end = tmp;
+        }
+        if (col_end < col_start) {
+            int tmp = col_start; col_start = col_end; col_end = tmp;
+        }
 
-    float x = col * WALL_GRID_STEP + GRID_STEP / 2.0f;
-    float y = row * WALL_GRID_STEP + GRID_STEP / 2.0f;
+        for (int r = row_start; r <= row_end; r++) {
+            for (int c = col_start; c <= col_end; c++) {
+                float x = c * WALL_GRID_STEP + GRID_STEP / 2.0f;
+                float y = r * WALL_GRID_STEP + GRID_STEP / 2.0f;
 
-    glBegin(GL_LINES);
-    if (type == EDGE_HORIZONTAL) {
-        glVertex3f(x, y, 0.03f);
-        glVertex3f(x + WALL_GRID_STEP, y, 0.03f);
-    } else if (type == EDGE_VERTICAL) {
-        glVertex3f(x, y, 0.03f);
-        glVertex3f(x, y + WALL_GRID_STEP, 0.03f);
+
+                glBegin(GL_LINES);
+                if (type == EDGE_HORIZONTAL) {
+                    glVertex3f(x, y, 0.03f);
+                    glVertex3f(x + WALL_GRID_STEP, y, 0.03f);
+                } else if (type == EDGE_VERTICAL) {
+                    glVertex3f(x, y, 0.03f);
+                    glVertex3f(x, y + WALL_GRID_STEP, 0.03f);
+                }
+                glEnd();
+            }
+        }
+    } else {
+        int row = scene->wall_grid.selected_row;
+        int col = scene->wall_grid.selected_col;
+        EdgeType type = scene->wall_grid.selected_type;
+
+        if (type == EDGE_NONE || row < 0 || col < 0) return;
+
+        float x = col * WALL_GRID_STEP + GRID_STEP / 2.0f;
+        float y = row * WALL_GRID_STEP + GRID_STEP / 2.0f;
+
+        glBegin(GL_LINES);
+        if (type == EDGE_HORIZONTAL) {
+            glVertex3f(x, y, 0.03f);
+            glVertex3f(x + WALL_GRID_STEP, y, 0.03f);
+        } else if (type == EDGE_VERTICAL) {
+            glVertex3f(x, y, 0.03f);
+            glVertex3f(x, y + WALL_GRID_STEP, 0.03f);
+        }
+        glEnd();
     }
-    glEnd();
 
     glEnable(GL_TEXTURE_2D);  // Textúra engedélyezése (ha szükséges a többi objektumhoz)
     glEnable(GL_LIGHTING);
@@ -335,7 +420,7 @@ void init_grid(Grid* grid, int rows, int cols)
     grid->selection_start[0] = -1;
     grid->selection_start[1] = -1;
 
-    grid->selected_type = EDGE_HORIZONTAL;
+    grid->selected_type = NONE;
 
 
     grid->cells = (Cell**)malloc(rows * sizeof(Cell*));
@@ -353,8 +438,9 @@ void init_grid(Grid* grid, int rows, int cols)
 
         for (int c = 0; c < cols; c++) {
             grid->cells[r][c].occupied = 0;
-           // grid->cells[r][c].texture_id = 0;
-            // opcionálisan: memset a modelre, vagy egyéb inicializálás
+            grid->cells[r][c].object = NULL;
+            grid->cells[r][c].horizontal_wall_object = NULL;
+            grid->cells[r][c].vertical_wall_object = NULL;
         }
     }
 
@@ -368,7 +454,7 @@ void init_scene(Scene* scene)
     scene->selected_mode = 0; //0 floor, 1 wall
     init_templates();
     init_grid(&scene->grid, 20, 20);
-    init_grid(&scene->wall_grid,40,40);
+    init_grid(&scene->wall_grid,41,41);
 
 
     printf("KEZDO SCENE = %d\n", scene->object_count);
@@ -456,7 +542,7 @@ void draw_all_objects(const Scene* scene)
 {
     for (int i = 0; i < scene->object_count; i++) {
         glBindTexture(GL_TEXTURE_2D, scene->texture_ids[i]);
-        draw_model(&(scene->objects[i]), scene->objects[i].pos_x, scene->objects[i].pos_y, scene->objects[i].pos_z);
+        draw_model(&(scene->objects[i]));
     }
 }
 

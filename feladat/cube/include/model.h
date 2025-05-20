@@ -59,6 +59,7 @@ typedef struct Model
     float pos_x;
     float pos_y;
     float pos_z;
+    float rot_x, rot_y, rot_z;
 } Model;
 
 /**

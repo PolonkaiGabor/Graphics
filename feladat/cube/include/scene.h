@@ -10,7 +10,12 @@ typedef struct Cell
 {
     int occupied;
     Model* object;
+    Model* horizontal_wall_object;
+    Model* vertical_wall_object;
     int texture_id;
+
+    int horizontal_object_texture_id;
+    int vertical_object_texture_id;
 } Cell;
 
 typedef enum {
@@ -84,7 +89,7 @@ typedef struct {
  */
 void init_scene(Scene* scene);
 
-void createFloorObject(Scene* scene, int row, int col, int textureID);
+void createFloorObject(Scene* scene, Grid* grid, int row, int col, int textureID, int type);
 
 void setElementTexture(Scene* scene,Model* element,int textureKeyID);
 

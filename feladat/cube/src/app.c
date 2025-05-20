@@ -109,80 +109,99 @@ void reshape(GLsizei width, GLsizei height)
     
 }
 
-typedef struct {
-    double x, y, z;
-} Point3D;
+void applySelection(Scene* scene, Grid* grid, int selectedTexture) {
 
-#define MAX_POINTS 1000
-Point3D points[MAX_POINTS];
-int point_count = 0;
+    if (grid->selection_start[0] != -1 && grid->selection_start[1] != -1) {
+        // Több cella kijelölése
 
-// Egy 4D-s vektor (x, y, z, w)
-typedef struct {
-    float x, y, z, w;
-} vec4;
+        int row_start = grid->selection_start[0];
+        int col_start = grid->selection_start[1];
+        int row_end = row_start + grid->selected_row_count;
+        int col_end = col_start + grid->selected_col_count;
 
-// Mátrix 4x4
-typedef struct {
-    float m[16];
-} mat4;
+        if (row_end < row_start) {
+            int tmp = row_start; row_start = row_end; row_end = tmp;
+        }
+        if (col_end < col_start) {
+            int tmp = col_start; col_start = col_end; col_end = tmp;
+        }
+        int* selected_texture_id;
+        Model* selected_object;
+
+        for (int r = row_start; r <= row_end; r++) {
+            for (int c = col_start; c <= col_end; c++) {
+
+                if (grid->selected_type == EDGE_NONE) {
+                    selected_texture_id = &grid->cells[r][c].texture_id;
+                    selected_object = grid->cells[r][c].object;
+                } else if (grid->selected_type == EDGE_HORIZONTAL) {
+                    selected_texture_id = &grid->cells[r][c].horizontal_object_texture_id;
+                    selected_object = grid->cells[r][c].horizontal_wall_object;
+                } else if (grid->selected_type == EDGE_VERTICAL) {
+                    selected_texture_id = &grid->cells[r][c].vertical_object_texture_id;
+                    selected_object = grid->cells[r][c].vertical_wall_object;
+                }
 
 
+                if (grid->selected_type == EDGE_NONE && selected_object == NULL) {
+                    grid->cells[r][c].occupied = 1;
+                    createFloorObject(scene, grid, r, c, 0, scene->selected_mode);
+                }
+                else if (grid->selected_type == EDGE_HORIZONTAL && selected_object == NULL) {
+                    createFloorObject(scene, grid, r, c, 0, scene->selected_mode);
+                }
+                else if (grid->selected_type == EDGE_VERTICAL && selected_object == NULL) {
+                    createFloorObject(scene, grid, r, c, 0, scene->selected_mode);
+                }else{
+                    if (selectedTexture != *selected_texture_id) {
+                        setElementTexture(scene, selected_object, selectedTexture);
+                        *selected_texture_id = selectedTexture;
+                    }
+                }
+            }
+        }
 
-bool getNormalizedDeviceCoords(float mouseX, float mouseY, float* out_x, float* out_y){
-    *out_x = (2.0 *mouseX) / 800 - 1.0;
-    *out_y = 1.0 -(2.0f * mouseY) / 600;  // y-t meg kell fordítani!
-    //vissza kell adni az x et és y-ot
-    return true;
-}
+        // Kijelölés visszaállítása
+        grid->selected_col_count = 0;
+        grid->selected_row_count = 0;
+        grid->selection_start[0] = -1;
+        grid->selection_start[1] = -1;
 
-bool getMouseWorldPosition3D(int mouse_x, int mouse_y, double* world_x, double* world_y, double* world_z)
-{
-    GLint viewport[4];
-    GLdouble modelview[16];
-    GLdouble projection[16];
+    } else {
+        // Egyetlen cella kezelése
+        int row = grid->selected_row;
+        int col = grid->selected_col;
 
-    // Read matrices and viewport from OpenGL state
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-    glGetDoublev(GL_PROJECTION_MATRIX, projection);
-    glGetIntegerv(GL_VIEWPORT, viewport);
+        int* selected_texture_id;
+        Model* selected_object;
 
-    // Flip y because OpenGL has 0 at the bottom, windowing system has 0 at the top
-    double winX = (double)mouse_x;
-    double winY = (double)(viewport[3] - mouse_y);
+        if (grid->selected_type == EDGE_NONE) {
+            selected_texture_id = &grid->cells[row][col].texture_id;
+            selected_object = grid->cells[row][col].object;
+        } else if (grid->selected_type == EDGE_HORIZONTAL) {
+            selected_texture_id = &grid->cells[row][col].horizontal_object_texture_id;
+            selected_object = grid->cells[row][col].horizontal_wall_object;
+        } else if (grid->selected_type == EDGE_VERTICAL) {
+            selected_texture_id = &grid->cells[row][col].vertical_object_texture_id;
+            selected_object = grid->cells[row][col].vertical_wall_object;
+        }
 
-    GLdouble nearX, nearY, nearZ;
-    GLdouble farX, farY, farZ;
-
-    // Unproject near point (depth=0)
-    if (!gluUnProject(winX, winY, 0.0, modelview, projection, viewport, &nearX, &nearY, &nearZ)) {
-        
-        return false;
+        if (grid->selected_type == EDGE_NONE && selected_object == NULL) {
+            grid->cells[row][col].occupied = 1;
+            createFloorObject(scene, grid, row, col, 0, scene->selected_mode);
+        }
+        else if (grid->selected_type == EDGE_HORIZONTAL && selected_object == NULL) {
+            createFloorObject(scene, grid, row, col, 0, scene->selected_mode);
+        }
+        else if (grid->selected_type == EDGE_VERTICAL && selected_object == NULL) {
+            createFloorObject(scene, grid, row, col, 0, scene->selected_mode);
+        }else{
+            if (selectedTexture != *selected_texture_id) {
+                setElementTexture(scene, selected_object, selectedTexture);
+                *selected_texture_id = selectedTexture;
+            }
+        }
     }
-    printf("ANYAD3 NEAR_X: %f , NEAR_Y: %f , NEAR_Z: %f\n",nearX,nearY,nearZ);
-
-    // Unproject far point (depth=1)
-    if (!gluUnProject(winX, winY, 1.0, modelview, projection, viewport, &farX, &farY, &farZ)) {
-        printf("ANYAD2\n");
-        return false;
-    }
-    printf("ANYAD3 FAR_X: %f , FAR_Y: %f, FAR_Z %f:\n",farX,farY,farZ);
-
-    // Calculate intersection with Z = 0 plane
-    double t = (-1.0-nearZ) / (farZ - nearZ);  // z = 0 metszés paramétere
-    printf("ANYAD %f\n",t);
-    if (t < 0.0 || t > 1.0) {
-        
-      //  printf("ANYAD3 FAR_X: %f , FAR_Y %f:\n",farX,farY);
-        return false;  // Nem metszi a Z=0 síkot a sugár
-    }
-    
-
-    *world_x = nearX + t * (farX - nearX);
-    *world_y = nearY + t * (farY - nearY);
-    *world_z = 0.0;
-
-    return true;
 }
 
 void handle_app_events(App* app)
@@ -222,9 +241,12 @@ void handle_app_events(App* app)
                 set_camera_z_speed(&(app->camera), 5.0);
                 break;
             case SDL_SCANCODE_TAB:
-
+                if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
+                    app->scene.wall_grid.selected_type = EDGE_VERTICAL;
+                }else{
+                    app->scene.wall_grid.selected_type = EDGE_HORIZONTAL;
+                } 
                 break;
-
             case SDL_SCANCODE_DOWN:
                 if(app->scene.selected_mode == 0){
                     if (app->scene.grid.selected_row > 0)
@@ -233,29 +255,18 @@ void handle_app_events(App* app)
 
                         if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
                             app->scene.grid.selected_row_count--;
-                           // printf("SHIFT + DOWN -> Lefele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
-                        } else {
-                           // printf("DOWN -> Lefele mozgas\n");
                         }
                     }
                 } else {
                     if (app->scene.wall_grid.selected_row > 0)
                     {
-                        
-                        if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
-                            app->scene.wall_grid.selected_type = EDGE_VERTICAL;
-                            app->scene.wall_grid.selected_col++;
+                        if (app->scene.wall_grid.selected_type == EDGE_VERTICAL && app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) {
                             app->scene.wall_grid.selected_row--;
-                        }else{
+
+                            app->scene.wall_grid.selected_row_count--;
+                            printf("ROW COUNT: %d\n",app->scene.wall_grid.selected_row_count);
+                        } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
                             app->scene.wall_grid.selected_row--;
-                        }
-
-
-                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
-                           // app->scene.wall_grid.selected_row_count--;
-                           // printf("SHIFT + DOWN -> Lefele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
-                        } else {
-                           // printf("DOWN -> Lefele mozgas\n");
                         }
                     }
                 }
@@ -268,26 +279,24 @@ void handle_app_events(App* app)
 
                         if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]
                             app->scene.grid.selected_row_count++;
-                           // printf("SHIFT + UP -> Felfele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
-                        } else {
-                           // printf("UP -> Felfele mozgas\n");
                         }
                     }
                 } else {
-                    if (app->scene.wall_grid.selected_row < app->scene.wall_grid.max_row - 1)
+                    int local_maxrow;
+                    if(app->scene.wall_grid.selected_type == EDGE_VERTICAL){
+                        local_maxrow = 2;
+                    }else{
+                        local_maxrow = 1;
+                    }
+                    if (app->scene.wall_grid.selected_row < app->scene.wall_grid.max_row - local_maxrow)
                     {
-                        if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
-                            app->scene.wall_grid.selected_type = EDGE_VERTICAL;
-                            app->scene.wall_grid.selected_col++;
-                        }else{
+                        if (app->scene.wall_grid.selected_type == EDGE_VERTICAL && app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) {
                             app->scene.wall_grid.selected_row++;
-                        }
 
-                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]
-                           // app->scene.wall_grid.selected_row_count++;
-                           // printf("SHIFT + UP -> Felfele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
-                        } else {
-                           // printf("UP -> Felfele mozgas\n");
+                            app->scene.wall_grid.selected_row_count++;
+                            printf("ROW COUNT: %d\n",app->scene.wall_grid.selected_row_count);
+                        } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
+                            app->scene.wall_grid.selected_row++;
                         }
                     }
                 }
@@ -299,30 +308,17 @@ void handle_app_events(App* app)
 
                         if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
                             app->scene.grid.selected_col_count--;
-                            //printf("SHIFT + LEFT -> Balra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
-                        } else {
-                           // printf("LEFT -> Balra mozgas\n");
                         }
                     }
                 } else {
-                    if(app->scene.wall_grid.selected_col == 0 && app->scene.wall_grid.selected_row == 0){
-                            app->scene.wall_grid.selected_type = EDGE_VERTICAL;
-                    }
                     if (app->scene.wall_grid.selected_col > 0){
-                        
-                        if(app->scene.wall_grid.selected_type == EDGE_VERTICAL){
-                            app->scene.wall_grid.selected_type = EDGE_HORIZONTAL;
-                            app->scene.wall_grid.selected_row++;
+                        if (app->scene.wall_grid.selected_type == EDGE_HORIZONTAL && app->scene.wall_grid.selection_start[1] != -1 && app->scene.wall_grid.selection_start[0] != -1) {
                             app->scene.wall_grid.selected_col--;
-                        }else{
-                            app->scene.wall_grid.selected_col--;
-                        }
 
-                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
-                           // app->scene.wall_grid.selected_col_count--;
-                            //printf("SHIFT + LEFT -> Balra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
-                        } else {
-                           // printf("LEFT -> Balra mozgas\n");
+                            app->scene.wall_grid.selected_col_count--;
+                            printf("COL COUNT: %d\n",app->scene.wall_grid.selected_col_count);
+                        } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
+                            app->scene.wall_grid.selected_col--;
                         }
                     }
                 }
@@ -330,97 +326,70 @@ void handle_app_events(App* app)
             case SDL_SCANCODE_RIGHT:
                 if(app->scene.selected_mode == 0){
                     if (app->scene.grid.selected_col < app->scene.grid.max_col - 1){ //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
+                        
                         app->scene.grid.selected_col++;
                         
-
                         if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
                             app->scene.grid.selected_col_count++;
-                            //printf("SHIFT + RIGHT -> Jobbra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
-                        } else {
-                           // printf("RIGHT -> Jobbra mozgas\n");
                         }
                     }
                 } else {
-                    if (app->scene.wall_grid.selected_col < app->scene.wall_grid.max_col - 1){ //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
-                        
-                        if(app->scene.wall_grid.selected_type == EDGE_VERTICAL){
-                            app->scene.wall_grid.selected_type = EDGE_HORIZONTAL;
-                            app->scene.wall_grid.selected_row++;
-                        }else{
-                            app->scene.wall_grid.selected_col++;
-                        }
+                    int local_maxcol;
+                    if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
+                        local_maxcol = 2;
+                    }else{
+                        local_maxcol = 1;
+                    }
 
-                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
-                          //  app->scene.wall_grid.selected_col_count++;
-                            //printf("SHIFT + RIGHT -> Jobbra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
-                        } else {
-                           // printf("RIGHT -> Jobbra mozgas\n");
+                    if (app->scene.wall_grid.selected_col < app->scene.wall_grid.max_col - local_maxcol){
+                        if (app->scene.wall_grid.selected_type == EDGE_HORIZONTAL && app->scene.wall_grid.selection_start[1] != -1 && app->scene.wall_grid.selection_start[0] != -1) {
+                            app->scene.wall_grid.selected_col++;
+
+                            app->scene.wall_grid.selected_col_count++;
+                            printf("COL COUNT: %d\n",app->scene.wall_grid.selected_col_count);
+                        } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
+                            app->scene.wall_grid.selected_col++;
                         }
                     }
                 }
                 break;
             case SDL_SCANCODE_RETURN:
-                    if(app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1){
-                        // Ha -1, akkor az egész kijelölést rajzoljuk
-                        int row_start = app->scene.grid.selection_start[0];
-                        int col_start = app->scene.grid.selection_start[1];
-                        int row_end = row_start + app->scene.grid.selected_row_count;
-                        int col_end = col_start + app->scene.grid.selected_col_count;
-
-                        // Kiszámoljuk a min és max értékeket, hogy helyesen rajzoljon negatív érték esetén is
-                        if (row_end < row_start) {
-                            int tmp = row_start; row_start = row_end; row_end = tmp;
-                        }
-                        if (col_end < col_start) {
-                            int tmp = col_start; col_start = col_end; col_end = tmp;
-                        }
-                        for (int r = row_start; r <= row_end; r++) {
-                            for (int c = col_start; c <= col_end; c++) {
-                                if(app->scene.grid.cells[r][c].occupied != 1){
-                                    app->scene.grid.cells[r][c].occupied = 1;
-                                    createFloorObject(&app->scene, r, c, 0);
-                                }else{
-                                    if (selectedTexture != app->scene.grid.cells[r][c].texture_id){
-                                        setElementTexture(&app->scene, app->scene.grid.cells[r][c].object, selectedTexture);
-                                        app->scene.grid.cells[r][c].texture_id = selectedTexture;
-                                    }
-                                }
-                            }
-                        }
-                        
-
-                        app->scene.grid.selected_col_count = 0;
-                        app->scene.grid.selected_row_count = 0;
-
-                        app->scene.grid.selection_start[0] = -1;
-                        app->scene.grid.selection_start[1] = -1;
-                    } else{
-                        if(app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].occupied != 1){
-                            app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].occupied = 1;
-                            createFloorObject(&app->scene, app->scene.grid.selected_row, app->scene.grid.selected_col,0);
-                        }else{
-                            if (selectedTexture != app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].texture_id){
-                                setElementTexture(&app->scene, app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].object, selectedTexture);
-                                app->scene.grid.cells[app->scene.grid.selected_row][app->scene.grid.selected_col].texture_id = selectedTexture;
-                            }
-                        }
-                    }
+                if(app->scene.selected_mode == 0){
+                    printf("SELECTED ROW: %d, COL: %d\n",app->scene.grid.selected_row,app->scene.grid.selected_col);
+                    applySelection(&app->scene, &app->scene.grid, selectedTexture);
+                } else {
+                    applySelection(&app->scene, &app->scene.wall_grid, selectedTexture);
+                }
+                    
+                    
                     
                     break;
             case SDL_SCANCODE_LSHIFT:
+                if(app->scene.selected_mode == 0){
                     if(app->scene.grid.selection_start[0] == -1 || app->scene.grid.selection_start[1] == -1){
                         app->scene.grid.selection_start[0] = app->scene.grid.selected_row;
                         app->scene.grid.selection_start[1] = app->scene.grid.selected_col;
                       //  printf("SELECTION START POS: ROW: %d, COL: %d\n",app->scene.grid.selection_start[0],app->scene.grid.selection_start[1]);
                     }
-                    break;
+                } else {
+                    if(app->scene.wall_grid.selection_start[0] == -1 || app->scene.wall_grid.selection_start[1] == -1){
+                        app->scene.wall_grid.selection_start[0] = app->scene.wall_grid.selected_row;
+                        app->scene.wall_grid.selection_start[1] = app->scene.wall_grid.selected_col;
+                      //  printf("SELECTION START POS: ROW: %d, COL: %d\n",app->scene.grid.selection_start[0],app->scene.grid.selection_start[1]);
+                    }
+                }
+                break;
             case SDL_SCANCODE_M:
+                if(app->scene.wall_grid.selection_start[0] == -1 || app->scene.wall_grid.selection_start[1] == -1){
                     if(app->scene.selected_mode == 0){
                         app->scene.selected_mode = 1;
+                        app->scene.wall_grid.selected_type = EDGE_HORIZONTAL;
                     }else{
                         app->scene.selected_mode = 0;
+                        app->scene.wall_grid.selected_type = EDGE_NONE;
                     }
-                    break;
+                }
+                break;
             default:
                 break;
             }
@@ -445,41 +414,6 @@ void handle_app_events(App* app)
             break;
         case SDL_MOUSEBUTTONDOWN:
             is_mouse_down = true;
-            int mouse_x_3d = event.button.x;
-            int mouse_y_3d = event.button.y;
-            double wx, wy, wz;
-
-            if (getMouseWorldPosition3D(mouse_x_3d,mouse_y_3d,&wx,&wy,&wz)) {
-                printf("Világ koordináta: (%f, %f)\n", wx, wy);
-            }
-        /*    if (event.button.button == SDL_BUTTON_LEFT && point_count < MAX_POINTS) {
-                int mouse_x = event.button.x;
-                int mouse_y = event.button.y;
-
-                GLint viewport[4];
-                GLdouble modelview[16];
-                GLdouble projection[16];
-                GLfloat winX, winY, winZ;
-                GLdouble worldX, worldY, worldZ;
-
-                glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-                glGetDoublev(GL_PROJECTION_MATRIX, projection);
-                glGetIntegerv(GL_VIEWPORT, viewport);
-
-                winX = (float)mouse_x;
-                winY = (float)(viewport[3] - mouse_y);  // SDL és OpenGL Y tengely különbség
-
-                glReadPixels(mouse_x, viewport[3] - mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
-
-                if (gluUnProject(winX, winY, winZ, modelview, projection, viewport, &worldX, &worldY, &worldZ)) {
-                    //points[point_count].x = worldX;
-                    //points[point_count].y = worldY;
-                    //points[point_count].z = worldZ;
-                    //point_count++;
-                    objectCreateByID(&(app->scene), 10, worldX, worldY, worldZ);
-                    printf("New point at: %f %f %f\n", worldX, worldY, worldZ);
-                }
-            } */
             break;
         case SDL_MOUSEMOTION:
             SDL_GetMouseState(&x, &y);
