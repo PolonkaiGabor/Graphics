@@ -117,6 +117,74 @@ typedef struct {
 Point3D points[MAX_POINTS];
 int point_count = 0;
 
+// Egy 4D-s vektor (x, y, z, w)
+typedef struct {
+    float x, y, z, w;
+} vec4;
+
+// Mátrix 4x4
+typedef struct {
+    float m[16];
+} mat4;
+
+
+
+bool getNormalizedDeviceCoords(float mouseX, float mouseY, float* out_x, float* out_y){
+    *out_x = (2.0 *mouseX) / 800 - 1.0;
+    *out_y = 1.0 -(2.0f * mouseY) / 600;  // y-t meg kell fordítani!
+    //vissza kell adni az x et és y-ot
+    return true;
+}
+
+bool getMouseWorldPosition3D(int mouse_x, int mouse_y, double* world_x, double* world_y, double* world_z)
+{
+    GLint viewport[4];
+    GLdouble modelview[16];
+    GLdouble projection[16];
+
+    // Read matrices and viewport from OpenGL state
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+    glGetDoublev(GL_PROJECTION_MATRIX, projection);
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    // Flip y because OpenGL has 0 at the bottom, windowing system has 0 at the top
+    double winX = (double)mouse_x;
+    double winY = (double)(viewport[3] - mouse_y);
+
+    GLdouble nearX, nearY, nearZ;
+    GLdouble farX, farY, farZ;
+
+    // Unproject near point (depth=0)
+    if (!gluUnProject(winX, winY, 0.0, modelview, projection, viewport, &nearX, &nearY, &nearZ)) {
+        
+        return false;
+    }
+    printf("ANYAD3 NEAR_X: %f , NEAR_Y: %f , NEAR_Z: %f\n",nearX,nearY,nearZ);
+
+    // Unproject far point (depth=1)
+    if (!gluUnProject(winX, winY, 1.0, modelview, projection, viewport, &farX, &farY, &farZ)) {
+        printf("ANYAD2\n");
+        return false;
+    }
+    printf("ANYAD3 FAR_X: %f , FAR_Y: %f, FAR_Z %f:\n",farX,farY,farZ);
+
+    // Calculate intersection with Z = 0 plane
+    double t = (-1.0-nearZ) / (farZ - nearZ);  // z = 0 metszés paramétere
+    printf("ANYAD %f\n",t);
+    if (t < 0.0 || t > 1.0) {
+        
+      //  printf("ANYAD3 FAR_X: %f , FAR_Y %f:\n",farX,farY);
+        return false;  // Nem metszi a Z=0 síkot a sugár
+    }
+    
+
+    *world_x = nearX + t * (farX - nearX);
+    *world_y = nearY + t * (farY - nearY);
+    *world_z = 0.0;
+
+    return true;
+}
+
 void handle_app_events(App* app)
 {
     SDL_Event event;
@@ -158,6 +226,7 @@ void handle_app_events(App* app)
                 break;
 
             case SDL_SCANCODE_DOWN:
+                if(app->scene.selected_mode == 0){
                     if (app->scene.grid.selected_row > 0)
                     {
                         app->scene.grid.selected_row--;
@@ -169,8 +238,30 @@ void handle_app_events(App* app)
                            // printf("DOWN -> Lefele mozgas\n");
                         }
                     }
-                    break;
+                } else {
+                    if (app->scene.wall_grid.selected_row > 0)
+                    {
+                        
+                        if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
+                            app->scene.wall_grid.selected_type = EDGE_VERTICAL;
+                            app->scene.wall_grid.selected_col++;
+                            app->scene.wall_grid.selected_row--;
+                        }else{
+                            app->scene.wall_grid.selected_row--;
+                        }
+
+
+                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                           // app->scene.wall_grid.selected_row_count--;
+                           // printf("SHIFT + DOWN -> Lefele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
+                        } else {
+                           // printf("DOWN -> Lefele mozgas\n");
+                        }
+                    }
+                }
+                break;
             case SDL_SCANCODE_UP:
+                if(app->scene.selected_mode == 0){
                     if (app->scene.grid.selected_row < app->scene.grid.max_row - 1)
                     {
                         app->scene.grid.selected_row++;
@@ -182,8 +273,27 @@ void handle_app_events(App* app)
                            // printf("UP -> Felfele mozgas\n");
                         }
                     }
-                    break;
+                } else {
+                    if (app->scene.wall_grid.selected_row < app->scene.wall_grid.max_row - 1)
+                    {
+                        if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
+                            app->scene.wall_grid.selected_type = EDGE_VERTICAL;
+                            app->scene.wall_grid.selected_col++;
+                        }else{
+                            app->scene.wall_grid.selected_row++;
+                        }
+
+                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]
+                           // app->scene.wall_grid.selected_row_count++;
+                           // printf("SHIFT + UP -> Felfele mozgas shift-tel ROW: %d\n",app->scene.grid.selected_row_count);
+                        } else {
+                           // printf("UP -> Felfele mozgas\n");
+                        }
+                    }
+                }
+                break;
             case SDL_SCANCODE_LEFT:
+                if(app->scene.selected_mode == 0){
                     if (app->scene.grid.selected_col > 0){
                         app->scene.grid.selected_col--;
 
@@ -194,10 +304,34 @@ void handle_app_events(App* app)
                            // printf("LEFT -> Balra mozgas\n");
                         }
                     }
-                    break;
+                } else {
+                    if(app->scene.wall_grid.selected_col == 0 && app->scene.wall_grid.selected_row == 0){
+                            app->scene.wall_grid.selected_type = EDGE_VERTICAL;
+                    }
+                    if (app->scene.wall_grid.selected_col > 0){
+                        
+                        if(app->scene.wall_grid.selected_type == EDGE_VERTICAL){
+                            app->scene.wall_grid.selected_type = EDGE_HORIZONTAL;
+                            app->scene.wall_grid.selected_row++;
+                            app->scene.wall_grid.selected_col--;
+                        }else{
+                            app->scene.wall_grid.selected_col--;
+                        }
+
+                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                           // app->scene.wall_grid.selected_col_count--;
+                            //printf("SHIFT + LEFT -> Balra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
+                        } else {
+                           // printf("LEFT -> Balra mozgas\n");
+                        }
+                    }
+                }
+                break;
             case SDL_SCANCODE_RIGHT:
+                if(app->scene.selected_mode == 0){
                     if (app->scene.grid.selected_col < app->scene.grid.max_col - 1){ //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
                         app->scene.grid.selected_col++;
+                        
 
                         if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
                             app->scene.grid.selected_col_count++;
@@ -206,7 +340,25 @@ void handle_app_events(App* app)
                            // printf("RIGHT -> Jobbra mozgas\n");
                         }
                     }
-                    break;
+                } else {
+                    if (app->scene.wall_grid.selected_col < app->scene.wall_grid.max_col - 1){ //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
+                        
+                        if(app->scene.wall_grid.selected_type == EDGE_VERTICAL){
+                            app->scene.wall_grid.selected_type = EDGE_HORIZONTAL;
+                            app->scene.wall_grid.selected_row++;
+                        }else{
+                            app->scene.wall_grid.selected_col++;
+                        }
+
+                        if (app->scene.wall_grid.selection_start[0] != -1 && app->scene.wall_grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                          //  app->scene.wall_grid.selected_col_count++;
+                            //printf("SHIFT + RIGHT -> Jobbra mozgas shift-tel ROW: %d\n",app->scene.grid.selected_col_count);
+                        } else {
+                           // printf("RIGHT -> Jobbra mozgas\n");
+                        }
+                    }
+                }
+                break;
             case SDL_SCANCODE_RETURN:
                     if(app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1){
                         // Ha -1, akkor az egész kijelölést rajzoljuk
@@ -262,6 +414,13 @@ void handle_app_events(App* app)
                       //  printf("SELECTION START POS: ROW: %d, COL: %d\n",app->scene.grid.selection_start[0],app->scene.grid.selection_start[1]);
                     }
                     break;
+            case SDL_SCANCODE_M:
+                    if(app->scene.selected_mode == 0){
+                        app->scene.selected_mode = 1;
+                    }else{
+                        app->scene.selected_mode = 0;
+                    }
+                    break;
             default:
                 break;
             }
@@ -286,6 +445,13 @@ void handle_app_events(App* app)
             break;
         case SDL_MOUSEBUTTONDOWN:
             is_mouse_down = true;
+            int mouse_x_3d = event.button.x;
+            int mouse_y_3d = event.button.y;
+            double wx, wy, wz;
+
+            if (getMouseWorldPosition3D(mouse_x_3d,mouse_y_3d,&wx,&wy,&wz)) {
+                printf("Világ koordináta: (%f, %f)\n", wx, wy);
+            }
         /*    if (event.button.button == SDL_BUTTON_LEFT && point_count < MAX_POINTS) {
                 int mouse_x = event.button.x;
                 int mouse_y = event.button.y;
@@ -335,6 +501,27 @@ void handle_app_events(App* app)
     }
 }
 
+void screenToWorld(int screen_x, int screen_y, float* world_x, float* world_y) {
+    GLint viewport[4];
+    GLdouble modelview[16];
+    GLdouble projection[16];
+    GLfloat winX, winY, winZ;
+    GLdouble posX, posY, posZ;
+
+    // Képernyőből lekérjük a mátrixokat
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+    glGetDoublev(GL_PROJECTION_MATRIX, projection);
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    winX = (float)screen_x;
+    winY = (float)viewport[3] - (float)screen_y;  // Y tengely invertálva
+    glReadPixels(screen_x, (int)winY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
+
+    gluUnProject(winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+
+    *world_x = (float)posX;
+    *world_y = (float)posY;
+}
 
 #define TARGET_FPS 60
 #define FRAME_DELAY (1000 / TARGET_FPS)

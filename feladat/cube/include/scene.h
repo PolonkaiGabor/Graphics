@@ -13,10 +13,24 @@ typedef struct Cell
     int texture_id;
 } Cell;
 
+typedef enum {
+    EDGE_NONE,
+    EDGE_HORIZONTAL,
+    EDGE_VERTICAL
+} EdgeType;
+
+typedef struct {
+    int row;
+    int col;
+    EdgeType type; // EDGE_HORIZONTAL vagy EDGE_VERTICAL
+} SelectedEdge;
+
 typedef struct Grid
 {
     int selected_row;
     int selected_col;
+    EdgeType selected_type;
+    
     int max_row;
     int max_col;
     Cell** cells;  // 2D dinamikus tömb
@@ -24,10 +38,7 @@ typedef struct Grid
     int selected_row_count;
     int selected_col_count;
     int selection_start[2];
-
-   // GLuint floor_texture_ids[1024];
-  //  Model floor_objects[1024];
-  //  int floor_count;
+    //SelectedEdge selected_edge;
 } Grid;
 
 
@@ -43,6 +54,8 @@ typedef struct Scene
 
     GLuint plane_texture;
     Grid grid;
+    Grid wall_grid;
+    int selected_mode;
 } Scene;
 
 
@@ -74,6 +87,8 @@ void init_scene(Scene* scene);
 void createFloorObject(Scene* scene, int row, int col, int textureID);
 
 void setElementTexture(Scene* scene,Model* element,int textureKeyID);
+
+void selectEdge(Scene* scene, float mouse_x, float mouse_y);
 
 /**
  * Set the lighting of the scene.

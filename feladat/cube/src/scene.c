@@ -6,6 +6,8 @@
 #include "draw.c"
 #include "info.h"
 
+#include <math.h>
+
 #include <SDL2/SDL.h>
 
 ObjectTemplate object_templates[] = {
@@ -123,7 +125,6 @@ bool setElementPosition(Model* element, float x, float y, float z) {
 }
 
 #define GRID_STEP 1  // Térköz
-#define GRID_SIZE 10   // Alapértelmezett oszlopok és sorok száma
 
 // A háló kirajzolásáért felelős függvény
 void draw_grid(const Scene* scene)
@@ -245,6 +246,81 @@ void createFloorObject(Scene* scene, int row, int col, int textureID){
     scene->grid.cells[row][col].texture_id = textureID;
 }
 
+//////////////////////////////////////////////////////////
+
+#define WALL_GRID_STEP 0.5  // Térköz
+
+// A háló kirajzolásáért felelős függvény
+void draw_wall_grid(const Scene* scene)
+{
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);  // Textúra letiltása
+
+
+    //Élsimítás 
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(1.0, 1.0, 1.0, 1.0f);// Fehér szín átlátszó
+    glLineWidth(3.0);  // Vonal vastagságának beállítása (pl. 2.0)
+
+
+    glBegin(GL_LINES);
+
+    // Sorok kirajzolása
+    for (int i = 0; i <= scene->wall_grid.max_row; i++) {
+        float y = i * WALL_GRID_STEP + GRID_STEP / 2.0;
+        float x_start = GRID_STEP / 2.0;
+        float x_end = WALL_GRID_STEP * scene->wall_grid.max_col + GRID_STEP / 2.0;
+
+        glVertex3f(x_start, y, 0.02f);
+        glVertex3f(x_end, y, 0.02f);
+    }
+
+    // Oszlopok kirajzolása
+    for (int i = 0; i <= scene->wall_grid.max_col; i++) {
+        float x = i * WALL_GRID_STEP + GRID_STEP / 2.0;
+        float y_start = GRID_STEP / 2.0;
+        float y_end = scene->wall_grid.max_col * WALL_GRID_STEP + GRID_STEP / 2.0;
+
+        glVertex3f(x, y_start, 0.02f);
+        glVertex3f(x, y_end, 0.02f);
+    }
+
+    glEnd();
+
+    glColor3f(0.0f, 0.0f, 1.0f); // kék
+    glLineWidth(3.0f);
+
+    int row = scene->wall_grid.selected_row;
+    int col = scene->wall_grid.selected_col;
+    EdgeType type = scene->wall_grid.selected_type;
+
+    if (type == EDGE_NONE || row < 0 || col < 0) return;
+
+    float x = col * WALL_GRID_STEP + GRID_STEP / 2.0f;
+    float y = row * WALL_GRID_STEP + GRID_STEP / 2.0f;
+
+    glBegin(GL_LINES);
+    if (type == EDGE_HORIZONTAL) {
+        glVertex3f(x, y, 0.03f);
+        glVertex3f(x + WALL_GRID_STEP, y, 0.03f);
+    } else if (type == EDGE_VERTICAL) {
+        glVertex3f(x, y, 0.03f);
+        glVertex3f(x, y + WALL_GRID_STEP, 0.03f);
+    }
+    glEnd();
+
+    glEnable(GL_TEXTURE_2D);  // Textúra engedélyezése (ha szükséges a többi objektumhoz)
+    glEnable(GL_LIGHTING);
+
+    //Élsimítás kikapcsolása
+    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_BLEND);
+}
+
 void init_grid(Grid* grid, int rows, int cols)
 {
     grid->max_row = rows;
@@ -258,6 +334,8 @@ void init_grid(Grid* grid, int rows, int cols)
 
     grid->selection_start[0] = -1;
     grid->selection_start[1] = -1;
+
+    grid->selected_type = EDGE_HORIZONTAL;
 
 
     grid->cells = (Cell**)malloc(rows * sizeof(Cell*));
@@ -282,11 +360,15 @@ void init_grid(Grid* grid, int rows, int cols)
 
 }
 
+
+
 void init_scene(Scene* scene)
 {
     scene->object_count = 0;
+    scene->selected_mode = 0; //0 floor, 1 wall
     init_templates();
     init_grid(&scene->grid, 20, 20);
+    init_grid(&scene->wall_grid,40,40);
 
 
     printf("KEZDO SCENE = %d\n", scene->object_count);
@@ -386,7 +468,11 @@ void render_scene(const Scene* scene)
     draw_groundplane(scene);
     draw_all_objects(scene);
   //  draw_bounding_box(&scene->objects[2]);
-    draw_grid(scene);
+    if(scene->selected_mode == 0){
+        draw_grid(scene);
+    } else{
+        draw_wall_grid(scene);
+    }
 
 }
 
