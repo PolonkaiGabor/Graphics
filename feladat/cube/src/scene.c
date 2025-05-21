@@ -21,7 +21,6 @@ ObjectTemplate object_templates[] = {
     { .id = 3, .model_path = "assets/models/wall4.obj", .texture_path = "assets/textures/wall_1.jpg" },
     { .id = 4, .model_path = "assets/models/plane.obj", .texture_path = "assets/textures/grass.jpg" },
   //  { .id = 10, .model_path = "assets/models/cat.obj", .texture_path = "assets/textures/cube.png" }, 
-    // stb.
 };
 const int object_template_count = sizeof(object_templates) / sizeof(ObjectTemplate);
 
