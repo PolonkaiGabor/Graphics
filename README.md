@@ -1,3 +1,16 @@
+# Számítógépes Grafika – Féléves Feladat
+
+**Hallgató neve:** Polonkai Gábor  
+**Neptun-kód:** CXG5RG
+
+## Repository felépítése
+
+A féléves beadandó feladat megoldása a `feladat/` mappában található.  
+Ez tartalmazza a teljes forráskódot, valamint minden egyéb szükséges fájlt a program futtatásához.
+
+Az assets mappának a linkje: https://drive.google.com/file/d/16RFTjr8nn7rgLmuwVs7y2Fp7HBRdQH3T/view?usp=sharing
+
+
 # Lakás Építő Játék (Sims-szerű szimuláció)
 
 Ez a projekt egy **egyszerű lakásépítő szimuláció**, amely hasonló mechanikákon alapul, mint a *The Sims* játék. A felhasználó falakat és padlót építhet, testre szabhatja a textúrákat, valamint váltogathat nézetek és eszközök között. A cél egy tetszőleges belső tér megtervezése interaktív módon.
@@ -44,3 +57,7 @@ A projekt **C nyelven**, **OpenGL** és **SDL2** segítségével készült.
 ### Fordítás
 - make -el fordítás majd
 - ./"The Sims 5.exe" parancsal futtatás
+
+```bash
+make
+./"The Sims 5.exe"
