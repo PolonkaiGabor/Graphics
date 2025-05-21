@@ -42,5 +42,5 @@ A projekt **C nyelven**, **OpenGL** és **SDL2** segítségével készült.
 - OpenGL
 
 ### Fordítás
-make -el fordítás majd
-./"The Sims 5.exe" parancsal futtatás
+- make -el fordítás majd
+- ./"The Sims 5.exe" parancsal futtatás
