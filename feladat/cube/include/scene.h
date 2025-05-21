@@ -63,6 +63,8 @@ typedef struct Scene
     int selected_mode;
     float light_intensity;
     bool showHelp;
+
+    int selectedTexture;
 } Scene;
 
 

@@ -5,7 +5,6 @@
 #include <SDL2/SDL_image.h>
 
 #include <SDL2/SDL.h>
-#include "SDL2/SDL_mixer.h"
 
 void init_app(App* app, int width, int height)
 {
@@ -56,7 +55,6 @@ void init_app(App* app, int width, int height)
 
     init_camera(&(app->camera));
     init_scene(&(app->scene));
-   // init_character(&app->player);
 
     app->is_running = true;
 }
@@ -145,13 +143,13 @@ void applySelection(Scene* scene, Grid* grid, int selectedTexture) {
 
                 if (grid->selected_type == EDGE_NONE && selected_object == NULL) {
                     grid->cells[r][c].occupied = 1;
-                    createFloorObject(scene, grid, r, c, 0, scene->selected_mode);
+                    createFloorObject(scene, grid, r, c, selectedTexture, scene->selected_mode);
                 }
                 else if (grid->selected_type == EDGE_HORIZONTAL && selected_object == NULL) {
-                    createFloorObject(scene, grid, r, c, 0, scene->selected_mode);
+                    createFloorObject(scene, grid, r, c, selectedTexture, scene->selected_mode);
                 }
                 else if (grid->selected_type == EDGE_VERTICAL && selected_object == NULL) {
-                    createFloorObject(scene, grid, r, c, 0, scene->selected_mode);
+                    createFloorObject(scene, grid, r, c, selectedTexture, scene->selected_mode);
                 }else{
                     if (selectedTexture != *selected_texture_id) {
                         setElementTexture(scene, selected_object, selectedTexture);
@@ -212,8 +210,6 @@ void handle_app_events(App* app)
     static int mouse_y = 0;
     int x;
     int y;
-    int selectedTexture = 1;
-   // const Uint8* keystates = SDL_GetKeyboardState(NULL);
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -240,6 +236,27 @@ void handle_app_events(App* app)
             case SDL_SCANCODE_SPACE:
                 set_camera_z_speed(&(app->camera), 5.0);
                 break;
+            case SDL_SCANCODE_1:
+                app->scene.selectedTexture = 0;
+                break;
+            case SDL_SCANCODE_2:
+                app->scene.selectedTexture = 1;
+                break;
+            case SDL_SCANCODE_3:
+                app->scene.selectedTexture = 2;
+                break;
+            case SDL_SCANCODE_4:
+                app->scene.selectedTexture = 3;
+                break;
+            case SDL_SCANCODE_5:
+                app->scene.selectedTexture = 4;
+                break;
+            case SDL_SCANCODE_6:
+                app->scene.selectedTexture = 5;
+                break;
+            case SDL_SCANCODE_7:
+                app->scene.selectedTexture = 6;
+                break;
             case SDL_SCANCODE_TAB:
                 if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
                     app->scene.wall_grid.selected_type = EDGE_VERTICAL;
@@ -253,7 +270,7 @@ void handle_app_events(App* app)
                     {
                         app->scene.grid.selected_row--;
 
-                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) {
                             app->scene.grid.selected_row_count--;
                         }
                     }
@@ -264,7 +281,7 @@ void handle_app_events(App* app)
                             app->scene.wall_grid.selected_row--;
 
                             app->scene.wall_grid.selected_row_count--;
-                            printf("ROW COUNT: %d\n",app->scene.wall_grid.selected_row_count);
+
                         } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
                             app->scene.wall_grid.selected_row--;
                         }
@@ -277,7 +294,7 @@ void handle_app_events(App* app)
                     {
                         app->scene.grid.selected_row++;
 
-                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) {
                             app->scene.grid.selected_row_count++;
                         }
                     }
@@ -294,7 +311,7 @@ void handle_app_events(App* app)
                             app->scene.wall_grid.selected_row++;
 
                             app->scene.wall_grid.selected_row_count++;
-                            printf("ROW COUNT: %d\n",app->scene.wall_grid.selected_row_count);
+
                         } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
                             app->scene.wall_grid.selected_row++;
                         }
@@ -306,7 +323,7 @@ void handle_app_events(App* app)
                     if (app->scene.grid.selected_col > 0){
                         app->scene.grid.selected_col--;
 
-                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { 
                             app->scene.grid.selected_col_count--;
                         }
                     }
@@ -316,7 +333,7 @@ void handle_app_events(App* app)
                             app->scene.wall_grid.selected_col--;
 
                             app->scene.wall_grid.selected_col_count--;
-                            printf("COL COUNT: %d\n",app->scene.wall_grid.selected_col_count);
+
                         } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
                             app->scene.wall_grid.selected_col--;
                         }
@@ -325,11 +342,11 @@ void handle_app_events(App* app)
                 break;
             case SDL_SCANCODE_RIGHT:
                 if(app->scene.selected_mode == 0){
-                    if (app->scene.grid.selected_col < app->scene.grid.max_col - 1){ //mivel maxrow 20 de 0 tol indexelve 19 kell legyen a maxnak
+                    if (app->scene.grid.selected_col < app->scene.grid.max_col - 1){
                         
                         app->scene.grid.selected_col++;
                         
-                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) { //keystates[SDL_SCANCODE_LSHIFT]    
+                        if (app->scene.grid.selection_start[0] != -1 && app->scene.grid.selection_start[1] != -1) {   
                             app->scene.grid.selected_col_count++;
                         }
                     }
@@ -346,7 +363,7 @@ void handle_app_events(App* app)
                             app->scene.wall_grid.selected_col++;
 
                             app->scene.wall_grid.selected_col_count++;
-                            printf("COL COUNT: %d\n",app->scene.wall_grid.selected_col_count);
+
                         } else if(app->scene.wall_grid.selection_start[0] == -1 && app->scene.wall_grid.selection_start[1] == -1) {
                             app->scene.wall_grid.selected_col++;
                         }
@@ -355,10 +372,9 @@ void handle_app_events(App* app)
                 break;
             case SDL_SCANCODE_RETURN:
                 if(app->scene.selected_mode == 0){
-                    printf("SELECTED ROW: %d, COL: %d\n",app->scene.grid.selected_row,app->scene.grid.selected_col);
-                    applySelection(&app->scene, &app->scene.grid, selectedTexture);
+                    applySelection(&app->scene, &app->scene.grid, app->scene.selectedTexture);
                 } else {
-                    applySelection(&app->scene, &app->scene.wall_grid, selectedTexture);
+                    applySelection(&app->scene, &app->scene.wall_grid, app->scene.selectedTexture);
                 }
                     
                     
@@ -369,13 +385,11 @@ void handle_app_events(App* app)
                     if(app->scene.grid.selection_start[0] == -1 || app->scene.grid.selection_start[1] == -1){
                         app->scene.grid.selection_start[0] = app->scene.grid.selected_row;
                         app->scene.grid.selection_start[1] = app->scene.grid.selected_col;
-                      //  printf("SELECTION START POS: ROW: %d, COL: %d\n",app->scene.grid.selection_start[0],app->scene.grid.selection_start[1]);
                     }
                 } else {
                     if(app->scene.wall_grid.selection_start[0] == -1 || app->scene.wall_grid.selection_start[1] == -1){
                         app->scene.wall_grid.selection_start[0] = app->scene.wall_grid.selected_row;
                         app->scene.wall_grid.selection_start[1] = app->scene.wall_grid.selected_col;
-                      //  printf("SELECTION START POS: ROW: %d, COL: %d\n",app->scene.grid.selection_start[0],app->scene.grid.selection_start[1]);
                     }
                 }
                 break;
@@ -392,11 +406,11 @@ void handle_app_events(App* app)
                 break;
             case SDL_SCANCODE_KP_PLUS:
                 app->scene.light_intensity += 0.1f;
-                if (app->scene.light_intensity > 1.0f) app->scene.light_intensity = 1.0f;  // max korlátozás
+                if (app->scene.light_intensity > 1.0f) app->scene.light_intensity = 1.0f;
                 break;
             case SDL_SCANCODE_KP_MINUS:
                 app->scene.light_intensity -= 0.1f;
-                if (app->scene.light_intensity < 0.0f) app->scene.light_intensity = 0.0f;  // min korlátozás
+                if (app->scene.light_intensity < 0.0f) app->scene.light_intensity = 0.0f;
                 break;
             case SDL_SCANCODE_F1:
                 app->scene.showHelp = !app->scene.showHelp;
@@ -446,28 +460,6 @@ void handle_app_events(App* app)
     }
 }
 
-void screenToWorld(int screen_x, int screen_y, float* world_x, float* world_y) {
-    GLint viewport[4];
-    GLdouble modelview[16];
-    GLdouble projection[16];
-    GLfloat winX, winY, winZ;
-    GLdouble posX, posY, posZ;
-
-    // Képernyőből lekérjük a mátrixokat
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-    glGetDoublev(GL_PROJECTION_MATRIX, projection);
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    winX = (float)screen_x;
-    winY = (float)viewport[3] - (float)screen_y;  // Y tengely invertálva
-    glReadPixels(screen_x, (int)winY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
-
-    gluUnProject(winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
-
-    *world_x = (float)posX;
-    *world_y = (float)posY;
-}
-
 #define TARGET_FPS 60
 #define FRAME_DELAY (1000 / TARGET_FPS)
 
@@ -484,14 +476,10 @@ void update_app(App* app)
 
     
     update_camera(&(app->camera), elapsed_time);
- //   update_character(&app->player, elapsed_time, app);
 
     update_scene(&(app->scene));
 
     frame_time = SDL_GetTicks() - frame_start;
-
-  //  float fps = 1000.0f / (float)(frame_time > 0 ? frame_time : 1);
-   // printf("FPS: %.2f\n", fps);
 
     if (frame_time < FRAME_DELAY) {
             SDL_Delay(FRAME_DELAY - frame_time);  // Várakozz, hogy elérjük az FPS célt

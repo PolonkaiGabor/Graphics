@@ -9,24 +9,30 @@
 #include <math.h>
 
 #include <SDL2/SDL.h>
-//#include <SDL2/SDL_ttf.h>
+
+#include <GL/glu.h>
 
 #define WALL_GRID_STEP 0.5  // Térköz
 
 ObjectTemplate object_templates[] = {
-    { .id = 0, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
-    { .id = 1, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
-    { .id = 2, .model_path = "assets/models/floor5.obj", .texture_path = "assets/textures/wood_floor.jpg" },
+  //  { .id = 0, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
+   // { .id = 1, .model_path = "assets/models/cube.obj", .texture_path = "assets/textures/cube.png" },
+    { .id = 2, .model_path = "assets/models/floor5.obj", .texture_path = "assets/textures/floor_2.jpg" },
     { .id = 3, .model_path = "assets/models/wall4.obj", .texture_path = "assets/textures/wall_1.jpg" },
-    { .id = 10, .model_path = "assets/models/cat.obj", .texture_path = "assets/textures/cube.png" }, 
+    { .id = 4, .model_path = "assets/models/plane.obj", .texture_path = "assets/textures/grass.jpg" },
+  //  { .id = 10, .model_path = "assets/models/cat.obj", .texture_path = "assets/textures/cube.png" }, 
     // stb.
 };
 const int object_template_count = sizeof(object_templates) / sizeof(ObjectTemplate);
 
 TextureEntry textures[] = {
-    { 0, 0, "assets/textures/wood_floor.png", false },
-    { 1, 0, "assets/textures/black_stones_floor.jpg", false },
-    { 2, 0, "assets/textures/rustic_wood_floor.jpg", false }
+    { 0, 0, "assets/textures/floor_2.jpg", false },
+    { 1, 0, "assets/textures/floor_1.jpg", false },
+    { 2, 0, "assets/textures/floor_3.jpg", false },
+    { 3, 0, "assets/textures/wall_1.jpg", false },
+    { 4, 0, "assets/textures/floor_4.jpg", false },
+    { 5, 0, "assets/textures/floor_5.jpg", false },
+    { 6, 0, "assets/textures/wall_3.jpg", false }
 };
 
 const int textureEntry_count = sizeof(textures) / sizeof(TextureEntry);
@@ -132,7 +138,6 @@ bool setElementRotation(Model* element, float rot_x_deg, float rot_y_deg, float 
     if (element == NULL) {
         return false;
     }
-    printf("asdsddssd\n");
 
     element->rot_x = rot_x_deg;
     element->rot_y = rot_y_deg;
@@ -253,7 +258,7 @@ void draw_grid(const Scene* scene)
 void createFloorObject(Scene* scene, Grid* grid, int row, int col, int textureID, int type){
     float x;
     float y;
-    float z = 0.0f;
+    float z = -0.01f;
     float rot_x=0.0, rot_y=0.0, rot_z=0.0;
     
     if (type == 0) {
@@ -447,85 +452,50 @@ void init_grid(Grid* grid, int rows, int cols)
 
 }
 
-/*
-TTF_Font* font;
-SDL_Surface* text_surface;
-SDL_Texture* text_texture;
-
-void init_fonts()
-{
-    if (TTF_Init() == -1) {
-        fprintf(stderr, "TTF_Init error: %s\n", TTF_GetError());
-        exit(1);
-    }
-
-    font = TTF_OpenFont("arial.ttf", 24);
-    if (!font) {
-        fprintf(stderr, "Font betöltési hiba: %s\n", TTF_GetError());
-        exit(1);
-    }
-}
-
-
-void render_text(float x, float y, const char* text)
-{
-    glRasterPos2f(x, y);
-    while (*text) {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *text);
-        text++;
-    }
-}
+GLuint helpTexture; // globális változó
 
 void show_help() {
-    
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND); // nincs áttetszőség
+    glEnable(GL_TEXTURE_2D);
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluOrtho2D(0, 800, 600, 0); // ablak méretéhez igazítva
+    gluOrtho2D(0, 800, 600, 0); // képernyő koordináták
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
 
-    // Háttér panel
-    glColor4f(0.0, 0.0, 0.0, 0.7); // átlátszó fekete
+    glBindTexture(GL_TEXTURE_2D, helpTexture); // ez a betöltött JPG textúra
+    glColor3f(1.0, 1.0, 1.0); // teljes szín, nincs átlátszóság
+
     glBegin(GL_QUADS);
-    glVertex2f(50, 50);
-    glVertex2f(750, 50);
-    glVertex2f(750, 300);
-    glVertex2f(50, 300);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(62, 65);         // bal alsó sarok
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(676 + 62, 65);       // jobb alsó sarok
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(676 + 62, 470+65);     // jobb felső sarok
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(62, 470 + 65);       // bal felső sarok
     glEnd();
 
-    // Szöveg megjelenítése
-    glColor3f(1.0, 1.0, 1.0);
-    render_text(70, 80, "Használati útmutató:");
-    render_text(70, 110, "WASD: Mozgás");
-    render_text(70, 140, "Egér: Kamera forgatás");
-    render_text(70, 170, "Jobb klikk: Objektum lerakás");
-    render_text(70, 200, "F1: Súgó bekapcsolása / kikapcsolása");
-    render_text(70, 230, "+ / -: Fényerő állítása");
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
 
-    // Visszaállítás
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 
-    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
 }
-    */
 
 
 
 void init_scene(Scene* scene)
 {
+    scene->selectedTexture = 0;
     scene->object_count = 0;
     scene->selected_mode = 0; //0 floor, 1 wall
     scene->light_intensity = 1.0f;
@@ -534,14 +504,14 @@ void init_scene(Scene* scene)
     init_grid(&scene->grid, 20, 20);
     init_grid(&scene->wall_grid,41,41);
 
+    
+    helpTexture = load_texture("assets/textures/help.jpg");
 
     printf("KEZDO SCENE = %d\n", scene->object_count);
-    scene->plane_texture = load_texture("assets/textures/grass.jpg");
+ //   scene->plane_texture = load_texture("assets/textures/grass.jpg");
 
-    Model* cube = objectCreateByID(scene,0,0.0,0.0,0.5);
-    objectCreateByID(scene,10,0.0,4.0,0.5);
-
-    setElementPosition(cube, 0.0f, 0.0f, 3.0f); 
+    Model* plane = objectCreateByID(scene,4,0.0,0.0,-0.15);
+    setElementRotation(plane, 90.0f, 180.0f, 0.0f);
 
     scene->material.ambient.red = 0.2; // ha ezeket mind 1 re allitom akkor latszik minden is a texturabol mindig
     scene->material.ambient.green = 0.2;
@@ -560,15 +530,6 @@ void init_scene(Scene* scene)
 
 void set_lighting(float intensity)
 {
-  /*  float ambient_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    float diffuse_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    float specular_light[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    float position[] = { 1.0f, 1.0f, 1.0f, 1 };
-
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_light);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, specular_light);
-    glLightfv(GL_LIGHT0, GL_POSITION, position); */
     GLfloat ambient[]  = { 0.2f * intensity, 0.2f * intensity, 0.2f * intensity, 1.0f };
     GLfloat diffuse[]  = { intensity, intensity, intensity, 1.0f };
     GLfloat specular[] = { 0.5f * intensity, 0.5f * intensity, 0.5f * intensity, 1.0f };
@@ -612,39 +573,71 @@ void update_scene(Scene* scene)
     (void)scene;
 }
 
-void draw_groundplane(const Scene* scene){
+/*void draw_groundplane(const Scene* scene){
     
     glBindTexture(GL_TEXTURE_2D, scene->plane_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0f, -10.0f, 0.0f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 10.0f, -10.0f, 0.0f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 10.0f,  10.0f, 0.0f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0f,  10.0f, 0.0f);
+    glNormal3f(0.0f, -1.0f, 0.0f);
+    glBegin(GL_TRIANGLES);
+    // Első háromszög: bal alsó - jobb alsó - jobb felső
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0f, -10.0f, 0.0f);  // bal alsó
+    glTexCoord2f(1.0f, 0.0f); glVertex3f( 10.0f, -10.0f, 0.0f);  // jobb alsó
+    glTexCoord2f(1.0f, 1.0f); glVertex3f( 10.0f,  10.0f, 0.0f);  // jobb felső
+
+    // Második háromszög: bal alsó - jobb felső - bal felső
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0f, -10.0f, 0.0f);  // bal alsó
+    glTexCoord2f(1.0f, 1.0f); glVertex3f( 10.0f,  10.0f, 0.0f);  // jobb felső
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0f,  10.0f, 0.0f);  // bal felső
     glEnd();
 
-}
+} */
 
 void draw_all_objects(const Scene* scene)
 {
+    int row = scene->wall_grid.selected_row;
+    int col = scene->wall_grid.selected_col;
+
+    Model* model;
+    EdgeType type = scene->wall_grid.selected_type;
+
+    if (type == EDGE_HORIZONTAL) {
+        model = scene->wall_grid.cells[row][col].horizontal_wall_object;
+    } else if (type == EDGE_VERTICAL) {
+        model = scene->wall_grid.cells[row][col].vertical_wall_object;
+    }
     for (int i = 0; i < scene->object_count; i++) {
+        if(&scene->objects[i] == model){
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }else{
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f); // normál textúraszín
+            glDisable(GL_BLEND);
+        }
         glBindTexture(GL_TEXTURE_2D, scene->texture_ids[i]);
         draw_model(&(scene->objects[i]));
+        
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  // szín visszaállítása
+        glDisable(GL_BLEND);               // blending kikapcs
     }
 }
 
 void render_scene(const Scene* scene)
 {
-  //  set_material(&(scene->material));
+    set_material(&(scene->material));
     set_lighting(scene->light_intensity);
     draw_origin();
-    draw_groundplane(scene);
+   // draw_groundplane(scene);
     draw_all_objects(scene);
+
   //  draw_bounding_box(&scene->objects[2]);
     if(scene->selected_mode == 0){
         draw_grid(scene);
     } else{
         draw_wall_grid(scene);
+    }
+    if(scene->showHelp){
+        show_help();
     }
 
 }
