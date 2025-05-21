@@ -9,6 +9,7 @@
 #include <math.h>
 
 #include <SDL2/SDL.h>
+//#include <SDL2/SDL_ttf.h>
 
 #define WALL_GRID_STEP 0.5  // Térköz
 
@@ -446,12 +447,89 @@ void init_grid(Grid* grid, int rows, int cols)
 
 }
 
+/*
+TTF_Font* font;
+SDL_Surface* text_surface;
+SDL_Texture* text_texture;
+
+void init_fonts()
+{
+    if (TTF_Init() == -1) {
+        fprintf(stderr, "TTF_Init error: %s\n", TTF_GetError());
+        exit(1);
+    }
+
+    font = TTF_OpenFont("arial.ttf", 24);
+    if (!font) {
+        fprintf(stderr, "Font betöltési hiba: %s\n", TTF_GetError());
+        exit(1);
+    }
+}
+
+
+void render_text(float x, float y, const char* text)
+{
+    glRasterPos2f(x, y);
+    while (*text) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *text);
+        text++;
+    }
+}
+
+void show_help() {
+    
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 800, 600, 0); // ablak méretéhez igazítva
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Háttér panel
+    glColor4f(0.0, 0.0, 0.0, 0.7); // átlátszó fekete
+    glBegin(GL_QUADS);
+    glVertex2f(50, 50);
+    glVertex2f(750, 50);
+    glVertex2f(750, 300);
+    glVertex2f(50, 300);
+    glEnd();
+
+    // Szöveg megjelenítése
+    glColor3f(1.0, 1.0, 1.0);
+    render_text(70, 80, "Használati útmutató:");
+    render_text(70, 110, "WASD: Mozgás");
+    render_text(70, 140, "Egér: Kamera forgatás");
+    render_text(70, 170, "Jobb klikk: Objektum lerakás");
+    render_text(70, 200, "F1: Súgó bekapcsolása / kikapcsolása");
+    render_text(70, 230, "+ / -: Fényerő állítása");
+
+    // Visszaállítás
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+}
+    */
+
 
 
 void init_scene(Scene* scene)
 {
     scene->object_count = 0;
     scene->selected_mode = 0; //0 floor, 1 wall
+    scene->light_intensity = 1.0f;
+    scene->showHelp = false;
     init_templates();
     init_grid(&scene->grid, 20, 20);
     init_grid(&scene->wall_grid,41,41);
@@ -465,32 +543,41 @@ void init_scene(Scene* scene)
 
     setElementPosition(cube, 0.0f, 0.0f, 3.0f); 
 
-    scene->material.ambient.red = 1.0; // ha ezeket mind 1 re allitom akkor latszik minden is a texturabol mindig
-    scene->material.ambient.green = 1.0;
-    scene->material.ambient.blue = 1.0;
+    scene->material.ambient.red = 0.2; // ha ezeket mind 1 re allitom akkor latszik minden is a texturabol mindig
+    scene->material.ambient.green = 0.2;
+    scene->material.ambient.blue = 0.2;
 
-    scene->material.diffuse.red = 1.0;
-    scene->material.diffuse.green = 1.0;
-    scene->material.diffuse.blue = 1.0;
+    scene->material.diffuse.red = 0.8;
+    scene->material.diffuse.green = 0.8;
+    scene->material.diffuse.blue = 0.8;
 
-    scene->material.specular.red = 1.0;
-    scene->material.specular.green = 1.0;
-    scene->material.specular.blue = 1.0;
+    scene->material.specular.red = 0.5;
+    scene->material.specular.green = 0.5;
+    scene->material.specular.blue = 0.5;
 
     scene->material.shininess = 0.0;
 }
 
-void set_lighting()
+void set_lighting(float intensity)
 {
-    float ambient_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-   // float diffuse_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-   // float specular_light[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    //float position[] = { 1.0f, 1.0f, 1.0f, 1 };
+  /*  float ambient_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    float diffuse_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    float specular_light[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    float position[] = { 1.0f, 1.0f, 1.0f, 1 };
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_light);
-    //glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
-    //glLightfv(GL_LIGHT0, GL_SPECULAR, specular_light);
-   // glLightfv(GL_LIGHT0, GL_POSITION, position);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular_light);
+    glLightfv(GL_LIGHT0, GL_POSITION, position); */
+    GLfloat ambient[]  = { 0.2f * intensity, 0.2f * intensity, 0.2f * intensity, 1.0f };
+    GLfloat diffuse[]  = { intensity, intensity, intensity, 1.0f };
+    GLfloat specular[] = { 0.5f * intensity, 0.5f * intensity, 0.5f * intensity, 1.0f };
+    GLfloat position[] = { 5.0f, 5.0f, 1.0f, 1.0f };
+
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+    glLightfv(GL_LIGHT0, GL_POSITION, position);
 }
 
 void set_material(const Material* material)
@@ -548,8 +635,8 @@ void draw_all_objects(const Scene* scene)
 
 void render_scene(const Scene* scene)
 {
-    set_material(&(scene->material));
-    set_lighting();
+  //  set_material(&(scene->material));
+    set_lighting(scene->light_intensity);
     draw_origin();
     draw_groundplane(scene);
     draw_all_objects(scene);

@@ -61,6 +61,8 @@ typedef struct Scene
     Grid grid;
     Grid wall_grid;
     int selected_mode;
+    float light_intensity;
+    bool showHelp;
 } Scene;
 
 
@@ -98,7 +100,7 @@ void selectEdge(Scene* scene, float mouse_x, float mouse_y);
 /**
  * Set the lighting of the scene.
  */
-void set_lighting();
+void set_lighting(float intensity);
 
 /**
  * Set the current material.

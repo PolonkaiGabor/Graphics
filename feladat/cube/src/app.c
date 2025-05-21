@@ -390,6 +390,17 @@ void handle_app_events(App* app)
                     }
                 }
                 break;
+            case SDL_SCANCODE_KP_PLUS:
+                app->scene.light_intensity += 0.1f;
+                if (app->scene.light_intensity > 1.0f) app->scene.light_intensity = 1.0f;  // max korlátozás
+                break;
+            case SDL_SCANCODE_KP_MINUS:
+                app->scene.light_intensity -= 0.1f;
+                if (app->scene.light_intensity < 0.0f) app->scene.light_intensity = 0.0f;  // min korlátozás
+                break;
+            case SDL_SCANCODE_F1:
+                app->scene.showHelp = !app->scene.showHelp;
+                break;
             default:
                 break;
             }
