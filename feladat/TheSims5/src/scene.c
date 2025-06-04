@@ -512,6 +512,10 @@ void init_scene(Scene* scene)
     Model* plane = objectCreateByID(scene,4,0.0,0.0,-0.15);
     setElementRotation(plane, 90.0f, 180.0f, 0.0f);
 
+    scene->lightPos[0] = 5.0f;
+    scene->lightPos[1] = 1.0f;
+    scene->lightPos[2] = 1.0f;
+
     scene->material.ambient.red = 0.2; // ha ezeket mind 1 re allitom akkor latszik minden is a texturabol mindig
     scene->material.ambient.green = 0.2;
     scene->material.ambient.blue = 0.2;
@@ -527,12 +531,12 @@ void init_scene(Scene* scene)
     scene->material.shininess = 0.0;
 }
 
-void set_lighting(float intensity)
+void set_lighting(float intensity, const float pos[3])
 {
     GLfloat ambient[]  = { 0.2f * intensity, 0.2f * intensity, 0.2f * intensity, 1.0f };
     GLfloat diffuse[]  = { intensity, intensity, intensity, 1.0f };
     GLfloat specular[] = { 0.5f * intensity, 0.5f * intensity, 0.5f * intensity, 1.0f };
-    GLfloat position[] = { 5.0f, 5.0f, 1.0f, 1.0f };
+    GLfloat position[] = { pos[0], pos[1], pos[2], 1.0f };
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
@@ -624,7 +628,7 @@ void draw_all_objects(const Scene* scene)
 void render_scene(const Scene* scene)
 {
     set_material(&(scene->material));
-    set_lighting(scene->light_intensity);
+    set_lighting(scene->light_intensity, scene->lightPos);
     draw_origin();
    // draw_groundplane(scene);
     draw_all_objects(scene);

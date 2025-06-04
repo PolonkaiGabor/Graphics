@@ -62,6 +62,7 @@ typedef struct Scene
     Grid wall_grid;
     int selected_mode;
     float light_intensity;
+    float lightPos[3];//x,y,z koordinatak
     bool showHelp;
 
     int selectedTexture;
@@ -102,7 +103,7 @@ void selectEdge(Scene* scene, float mouse_x, float mouse_y);
 /**
  * Set the lighting of the scene.
  */
-void set_lighting(float intensity);
+void set_lighting(float intensity, const float pos[3]);
 
 /**
  * Set the current material.

@@ -23,7 +23,7 @@ void init_app(App* app, int width, int height)
         "The Sims 5",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         width, height,
-        SDL_WINDOW_OPENGL);
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (app->window == NULL) {
         printf("[ERROR] Unable to create the application window!\n");
         return;
@@ -213,6 +213,16 @@ void handle_app_events(App* app)
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
+
+        case SDL_WINDOWEVENT:
+            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                int new_width = event.window.data1;
+                int new_height = event.window.data2;
+
+                reshape(new_width, new_height);
+                printf("[INFO] Ablak atmeretezve: %dx%d\n", new_width, new_height);
+            }
+        break;
         case SDL_KEYDOWN:
             switch (event.key.keysym.scancode) {
             case SDL_SCANCODE_ESCAPE:
@@ -256,6 +266,24 @@ void handle_app_events(App* app)
                 break;
             case SDL_SCANCODE_7:
                 app->scene.selectedTexture = 6;
+                break;
+            case SDL_SCANCODE_KP_6:
+                app->scene.lightPos[0] += 0.5f;
+                break;
+            case SDL_SCANCODE_KP_4:
+                app->scene.lightPos[0] -= 0.5f;
+                break;
+            case SDL_SCANCODE_KP_8:
+                app->scene.lightPos[1] += 0.5f;
+                break;
+            case SDL_SCANCODE_KP_2:
+                app->scene.lightPos[1] -= 0.5f;
+                break;
+            case SDL_SCANCODE_KP_7: //Light felfele
+                app->scene.lightPos[2] += 0.5f;
+                break;
+            case SDL_SCANCODE_KP_9: //Light lefele
+                app->scene.lightPos[2] -= 0.5f;
                 break;
             case SDL_SCANCODE_TAB:
                 if(app->scene.wall_grid.selected_type == EDGE_HORIZONTAL){
